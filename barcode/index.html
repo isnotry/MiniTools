@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量条码生成器</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        
+        .input-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea::placeholder {
+            color: #aaa;
+        }
+        
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .option-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .option-item label {
+            display: block;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        select, input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(56, 239, 125, 0.4);
+        }
+        
+        .btn-outline {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .preview-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .preview-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+        }
+        
+        .barcode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .barcode-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .barcode-card:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .barcode-card svg {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .barcode-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .barcode-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-download-single {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-download-single:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #ffe0e0;
+            color: #d00;
+        }
+        
+        .btn-delete:hover {
+            background: #d00;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.success {
+            background: #38ef7d;
+            color: #000;
+        }
+        
+        .toast.error {
+            background: #ff6b6b;
+            color: #fff;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .checkbox-wrapper label {
+            cursor: pointer;
+            color: #555;
+        }
+        
+        .help-text {
+            font-size: 13px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 批量条码生成器</h1>
+            <p>快速生成条码图片，一键保存全部</p>
+        </div>
+        
+        <div class="card input-section">
+            <h2>条码录入</h2>
+            
+            <div class="input-group">
+                <label>输入条码（每行一个，或用逗号/空格分隔）</label>
+                <textarea id="barcodeInput" placeholder="例如：
+6921234567890
+6934567890123
+2024001
+ABC123456789"></textarea>
+                <div class="help-text">支持 CODE128、EAN-13、UPC-A 等多种格式</div>
+            </div>
+            
+            <div class="options">
+                <div class="option-item">
+                    <label>条码类型</label>
+                    <select id="barcodeFormat">
+                        <option value="CODE128">CODE128（推荐，支持任意字符）</option>
+                        <option value="CODE128A">CODE128A（大写字母+数字）</option>
+                        <option value="CODE128B">CODE128B（通用）</option>
+                        <option value="CODE128C">CODE128C（纯数字，高密度）</option>
+                        <option value="EAN13">EAN-13（商品条码）</option>
+                        <option value="EAN8">EAN-8（8位商品码）</option>
+                        <option value="UPC">UPC-A（美国商品码）</option>
+                        <option value="ITF14">ITF-14（物流箱码）</option>
+                        <option value="CODE39">CODE39（工业用）</option>
+                        <option value="CODE93">CODE93</option>
+                        <option value="Codabar">Codabar</option>
+                    </select>
+                </div>
+                
+                <div class="option-item">
+                    <label>条形高度</label>
+                    <input type="number" id="barcodeHeight" value="80" min="30" max="200">
+                </div>
+                
+                <div class="option-item">
+                    <label>显示文字</label>
+                    <select id="showValue">
+                        <option value="true" selected>显示条码数字</option>
+                        <option value="false">不显示</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="autoParse" checked>
+                <label for="autoParse">自动识别不同条码格式（EAN13/UPC优先）</label>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="generateBarcodes()">
+                    <span>⚡</span> 生成条码
+                </button>
+                <button class="btn btn-success" id="downloadAllBtn" onclick="downloadAll()" disabled>
+                    <span>📥</span> 一键保存全部
+                </button>
+                <button class="btn btn-outline" onclick="clearAll()">
+                    <span>🗑️</span> 清空
+                </button>
+            </div>
+        </div>
+        
+        <div class="card preview-section" id="previewSection" style="display: none;">
+            <h2>条码预览</h2>
+            
+            <div class="preview-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalCount">0</span>
+                    <span class="stat-label">个条码</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="validCount">0</span>
+                    <span class="stat-label">个有效</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="invalidCount">0</span>
+                    <span class="stat-label">个无效</span>
+                </div>
+            </div>
+            
+            <div class="barcode-grid" id="barcodeGrid"></div>
+        </div>
+        
+        <div class="card" id="emptyState">
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/>
+                </svg>
+                <p>在上方输入条码内容，然后点击"生成条码"</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let generatedBarcodes = [];
+        
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+        
+        function parseInput(text) {
+            // 支持多种分隔符: 换行、逗号、分号、空格、制表符
+            const items = text.split(/[\n,\s;，；\t]+/).filter(item => item.trim());
+            return items.map(item => item.trim()).filter(item => item.length > 0);
+        }
+        
+        function detectFormat(value) {
+            const format = document.getElementById('barcodeFormat').value;
+            if (!document.getElementById('autoParse').checked) {
+                return format;
+            }
+            
+            // 自动识别格式
+            const cleanValue = value.replace(/[\s-]/g, '');
+            
+            // EAN-13: 13位数字，以非0开头，但先用CODE128尝试，如果失败再用EAN13
+            if (/^\d{13}$/.test(cleanValue) && cleanValue[0] !== '0') {
+                return 'EAN13';
+            }
+            // UPC-A: 12位数字
+            if (/^\d{12}$/.test(cleanValue)) {
+                return 'UPC';
+            }
+            // EAN-8: 8位数字
+            if (/^\d{8}$/.test(cleanValue)) {
+                return 'EAN8';
+            }
+            // ITF-14: 14位数字（物流用）
+            if (/^\d{14}$/.test(cleanValue)) {
+                return 'ITF14';
+            }
+            // 纯数字但长度超过13位，用CODE128C
+            if (/^\d+$/.test(cleanValue) && cleanValue.length > 13) {
+                return 'CODE128C';
+            }
+            
+            // 默认返回选中的格式
+            return format;
+        }
+        
+        function generateBarcodeSVG(value, format) {
+            try {
+                const validFormats = ['CODE128', 'CODE128A', 'CODE128B', 'CODE128C', 
+                                      'EAN13', 'EAN8', 'UPC', 'ITF14', 'CODE39', 'CODE93', 'Codabar'];
+                if (!validFormats.includes(format)) {
+                    format = 'CODE128';
+                }
+                
+                const height = parseInt(document.getElementById('barcodeHeight').value) || 80;
+                const showValue = document.getElementById('showValue').value === 'true';
+                
+                // 对于EAN13/UPC等需要校验位的格式，先尝试CODE128，如果失败再用原格式
+                let actualFormat = format;
+                if (['EAN13', 'EAN8', 'UPC', 'ITF14'].includes(format)) {
+                    try {
+                        // 先用CODE128尝试生成
+                        const testSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        JsBarcode(testSvg, value, {
+                            format: 'CODE128',
+                            height: height,
+                            width: 2,
+                            displayValue: false,
+                            margin: 10
+                        });
+                        // 如果CODE128成功，用CODE128
+                        actualFormat = 'CODE128';
+                    } catch (e) {
+                        // CODE128失败，保持原格式
+                    }
+                }
+                
+                // 先创建临时SVG获取条码尺寸
+                const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                JsBarcode(tempSvg, value, {
+                    format: actualFormat,
+                    height: height,
+                    width: 2,
+                    displayValue: false, // 不使用内置的数字显示
+                    margin: 10,
+                    background: '#ffffff',
+                    lineColor: '#000000'
+                });
+                
+                // 获取条码的实际尺寸
+                const barcodeWidth = tempSvg.getAttribute('width') || 200;
+                const barcodeHeight = tempSvg.getAttribute('height') || 120;
+                
+                // 数字区域高度
+                const textHeight = showValue ? 35 : 0;
+                const padding = 15;
+                
+                // 创建整合后的SVG（数字在上，条码在下）
+                const finalSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                finalSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                finalSvg.setAttribute('width', parseInt(barcodeWidth) + padding * 2);
+                finalSvg.setAttribute('height', parseInt(barcodeHeight) + textHeight + padding * 2);
+                finalSvg.setAttribute('viewBox', `0 0 ${parseInt(barcodeWidth) + padding * 2} ${parseInt(barcodeHeight) + textHeight + padding * 2}`);
+                
+                // 添加背景
+                const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bg.setAttribute('width', '100%');
+                bg.setAttribute('height', '100%');
+                bg.setAttribute('fill', '#ffffff');
+                finalSvg.appendChild(bg);
+                
+                // 添加条码
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('transform', `translate(${padding}, ${padding})`);
+                g.innerHTML = tempSvg.innerHTML;
+                finalSvg.appendChild(g);
+                
+                // 添加数字（放在条码下方）
+                if (showValue) {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', (parseInt(barcodeWidth) + padding * 2) / 2);
+                    text.setAttribute('y', parseInt(barcodeHeight) + padding + 30);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+                    text.setAttribute('font-size', '18');
+                    text.setAttribute('font-weight', 'bold');
+                    text.setAttribute('fill', '#000000');
+                    text.textContent = value;
+                    finalSvg.appendChild(text);
+                }
+                
+                return finalSvg;
+            } catch (e) {
+                console.error('生成条码失败:', value, e);
+                return null;
+            }
+        }
+        
+        function generateBarcodes() {
+            const input = document.getElementById('barcodeInput').value;
+            if (!input.trim()) {
+                showToast('请输入条码内容', 'error');
+                return;
+            }
+            
+            const values = parseInput(input);
+            if (values.length === 0) {
+                showToast('请输入有效的条码内容', 'error');
+                return;
+            }
+            
+            generatedBarcodes = [];
+            let validCount = 0;
+            let invalidCount = 0;
+            
+            values.forEach(value => {
+                const format = detectFormat(value);
+                const svg = generateBarcodeSVG(value, format);
+                
+                if (svg) {
+                    generatedBarcodes.push({
+                        value: value,
+                        format: format,
+                        svg: svg,
+                        valid: true
+                    });
+                    validCount++;
+                } else {
+                    generatedBarcodes.push({
+                        value: value,
+                        format: format,
+                        svg: null,
+                        valid: false
+                    });
+                    invalidCount++;
+                }
+            });
+            
+            renderBarcodes(validCount, invalidCount);
+            showToast(`成功生成 ${validCount} 个条码`, 'success');
+        }
+        
+        function renderBarcodes(validCount, invalidCount) {
+            const previewSection = document.getElementById('previewSection');
+            const emptyState = document.getElementById('emptyState');
+            const grid = document.getElementById('barcodeGrid');
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+            
+            document.getElementById('totalCount').textContent = generatedBarcodes.length;
+            document.getElementById('validCount').textContent = validCount;
+            document.getElementById('invalidCount').textContent = invalidCount;
+            
+            if (generatedBarcodes.length === 0) {
+                previewSection.style.display = 'none';
+                emptyState.style.display = 'block';
+                downloadAllBtn.disabled = true;
+                return;
+            }
+            
+            previewSection.style.display = 'block';
+            emptyState.style.display = 'none';
+            downloadAllBtn.disabled = validCount === 0;
+            
+            grid.innerHTML = '';
+            
+            generatedBarcodes.forEach((barcode, index) => {
+                const card = document.createElement('div');
+                card.className = 'barcode-card';
+                
+                if (barcode.valid) {
+                    const svgClone = barcode.svg.cloneNode(true);
+                    // 调整预览尺寸
+                    svgClone.style.width = '100%';
+                    svgClone.style.height = 'auto';
+                    svgClone.style.display = 'block';
+                    card.appendChild(svgClone);
+                } else {
+                    card.innerHTML = '<div style="padding: 40px; color: #d00;">条码格式不支持</div>';
+                }
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'barcode-actions';
+                
+                if (barcode.valid) {
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn-download-single';
+                    downloadBtn.textContent = '下载此条码';
+                    downloadBtn.onclick = () => downloadSingle(barcode);
+                    actionsDiv.appendChild(downloadBtn);
+                }
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-delete';
+                deleteBtn.textContent = '删除';
+                deleteBtn.onclick = () => deleteBarcode(index);
+                actionsDiv.appendChild(deleteBtn);
+                
+                card.appendChild(actionsDiv);
+                grid.appendChild(card);
+            });
+        }
+        
+        function deleteBarcode(index) {
+            generatedBarcodes.splice(index, 1);
+            const validCount = generatedBarcodes.filter(b => b.valid).length;
+            const invalidCount = generatedBarcodes.filter(b => !b.valid).length;
+            renderBarcodes(validCount, invalidCount);
+            showToast('已删除该条码');
+        }
+        
+        function svgToCanvas(svg, width, height) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const img = new Image();
+                
+                img.onload = () => {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas);
+                };
+                
+                img.onerror = reject;
+                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            });
+        }
+        
+        async function downloadSingle(barcode) {
+            try {
+                const svg = barcode.svg;
+                
+                // 使用 SVG 的实际尺寸属性
+                const width = parseInt(svg.getAttribute('width')) || 300;
+                const height = parseInt(svg.getAttribute('height')) || 150;
+                
+                const canvas = await svgToCanvas(svg, width, height);
+                
+                const link = document.createElement('a');
+                link.download = `barcode_${barcode.value}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                showToast('下载成功', 'success');
+            } catch (e) {
+                console.error('下载失败:', e);
+                showToast('下载失败，请重试', 'error');
+            }
+        }
+        
+        async function downloadAll() {
+            const validBarcodes = generatedBarcodes.filter(b => b.valid);
+            if (validBarcodes.length === 0) {
+                showToast('没有可下载的条码', 'error');
+                return;
+            }
+            
+            if (validBarcodes.length === 1) {
+                downloadSingle(validBarcodes[0]);
+                return;
+            }
+            
+            showToast('正在打包，请稍候...', 'info');
+            
+            try {
+                const zip = new JSZip();
+                
+                for (let i = 0; i < validBarcodes.length; i++) {
+                    const barcode = validBarcodes[i];
+                    const svg = barcode.svg;
+                    
+                    // 使用 SVG 的实际尺寸属性
+                    const width = parseInt(svg.getAttribute('width')) || 300;
+                    const height = parseInt(svg.getAttribute('height')) || 150;
+                    
+                    const canvas = await svgToCanvas(svg, width, height);
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const base64 = dataUrl.split(',')[1];
+                    
+                    // 清理文件名中的特殊字符
+                    const safeValue = barcode.value.replace(/[^a-zA-Z0-9_-]/g, '_');
+                    zip.file(`barcode_${safeValue}.png`, base64, { base64: true });
+                }
+                
+                const content = await zip.generateAsync({ type: 'blob' });
+                const link = document.createElement('a');
+                link.download = `barcodes_${new Date().toISOString().slice(0, 10)}.zip`;
+                link.href = URL.createObjectURL(content);
+                link.click();
+                URL.revokeObjectURL(link.href);
+                
+                showToast(`成功打包 ${validBarcodes.length} 个条码`, 'success');
+            } catch (e) {
+                console.error('打包失败:', e);
+                showToast('打包失败，请重试', 'error');
+            }
+        }
+        
+        function clearAll() {
+            generatedBarcodes = [];
+            document.getElementById('barcodeInput').value = '';
+            document.getElementById('previewSection').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('downloadAllBtn').disabled = true;
+            showToast('已清空所有内容');
+        }
+    </script>
+</body>
+</html>
