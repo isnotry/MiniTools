@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
+    <title>快速切图工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        :root {
+            --background: #ffffff;
+            --background-subtle: #fafafa;
+            --background-muted: #f5f5f5;
+            --foreground: #171717;
+            --foreground-secondary: #666666;
+            --foreground-tertiary: #999999;
+            --gray-200: #eaeaea;
+            --gray-300: #d4d4d4;
+            --gray-700: #333333;
+            --accent: #0070f3;
+            --accent-hover: #0061d5;
+            --accent-subtle: #f0f7ff;
+            --danger: #d00;
+            --danger-subtle: #ffe0e0;
+            --font-sans: "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            --font-mono: "Geist Mono", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+            --text-xs: 12px; --text-sm: 13px; --text-base: 14px;
+            --text-md: 16px; --text-lg: 20px; --text-xl: 28px;
+            --radius: 8px;
+            --radius-sm: 6px;
+            --radius-pill: 128px;
+            --radius-full: 9999px;
+            --button-primary-hover: #383838;
+            --button-secondary-hover: #f2f2f2;
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 16px;
+            --space-4: 24px;
+            --space-5: 32px;
+        }
+
+        :root.dark {
+            --background: #0a0a0a;
+            --background-subtle: #111111;
+            --background-muted: #1a1a1a;
+            --foreground: #ededed;
+            --foreground-secondary: #a0a0a0;
+            --foreground-tertiary: #666666;
+            --gray-200: #333333;
+            --gray-300: #444444;
+            --gray-700: #cccccc;
+            --accent: #0070f3;
+            --accent-hover: #3291ff;
+            --accent-subtle: #0a2540;
+            --danger: #ff6b6b;
+            --danger-subtle: #3a1d1d;
+            --button-primary-hover: #ccc;
+            --button-secondary-hover: #1a1a1a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            color: var(--foreground);
+            background: var(--background-subtle);
+            min-height: 100vh;
+            padding: var(--space-4);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        .header { text-align: center; margin-bottom: var(--space-5); }
+        .header h1 { font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.02em; margin-bottom: var(--space-2); }
+        .header .subtitle { color: var(--foreground-secondary); font-size: var(--text-base); }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: var(--space-4);
+            align-items: start;
+        }
+        @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--background);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: var(--space-4);
+        }
+        .card h2 { margin-bottom: var(--space-3); font-size: var(--text-md); font-weight: 600; letter-spacing: -0.01em; }
+
+        /* 拖拽 / 选图区 */
+        .dropzone {
+            border: 1px dashed var(--gray-300);
+            border-radius: var(--radius);
+            padding: var(--space-5) var(--space-4);
+            text-align: center;
+            cursor: pointer;
+            transition: background .2s, border-color .2s, padding .2s;
+            color: var(--foreground-secondary);
+            display: block;
+        }
+        .dropzone:hover, .dropzone.dragover { background: var(--background-subtle); border-color: var(--accent); }
+        .dropzone .dz-icon { color: var(--foreground-tertiary); margin-bottom: var(--space-2); display: flex; justify-content: center; }
+        .dropzone .dz-title { font-weight: 600; color: var(--foreground); font-size: 14px; }
+        .dropzone .dz-hint { font-size: var(--text-sm); color: var(--foreground-tertiary); margin-top: 4px; }
+        input[type="file"] { display: none; }
+
+        /* 加载后紧凑态 */
+        .dropzone.loaded { padding: 12px 16px; text-align: left; }
+        .dropzone.loaded .dz-empty { display: none; }
+        .dropzone:not(.loaded) .dz-loaded { display: none; }
+        .dz-loaded { display: flex; align-items: center; gap: 12px; }
+        .dz-thumb { width: 48px; height: 48px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--gray-200); flex-shrink: 0; }
+        .dz-info { flex: 1; min-width: 0; }
+        .dz-filename { font-weight: 600; color: var(--foreground); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dz-dims { font-size: var(--text-xs); color: var(--foreground-tertiary); font-family: var(--font-mono); }
+        .dz-change { font-size: var(--text-sm); color: var(--accent); white-space: nowrap; flex-shrink: 0; }
+
+        .meta {
+            display: none;
+            margin-top: var(--space-3);
+            padding: 12px var(--space-3);
+            background: var(--background-subtle);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+            font-family: var(--font-mono);
+            word-break: break-all;
+        }
+        .meta.show { display: block; }
+        .meta strong { color: var(--foreground); font-weight: 600; }
+
+        /* 分段控制器（模式切换） */
+        .seg {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            background: var(--background-muted);
+            border-radius: var(--radius);
+            margin: var(--space-4) 0 var(--space-3);
+        }
+        .seg-btn {
+            flex: 1;
+            padding: 8px 6px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--foreground-secondary);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background .2s, color .2s;
+            white-space: nowrap;
+        }
+        .seg-btn.active { background: var(--foreground); color: var(--background); }
+
+        .mode-panel { display: none; }
+        .mode-panel.active { display: block; }
+
+        .input-group { margin-bottom: var(--space-3); }
+        .input-group label {
+            display: block; color: var(--foreground-secondary);
+            margin-bottom: var(--space-2); font-weight: 500; font-size: 14px;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: var(--font-sans);
+            color: var(--foreground);
+            background: var(--background);
+            transition: border-color .2s, box-shadow .2s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+        input::placeholder { color: var(--foreground-tertiary); }
+        input:disabled { opacity: .45; cursor: not-allowed; }
+
+        /* 网格快捷预设 */
+        .presets { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+        .preset-chip {
+            padding: 5px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-pill);
+            background: var(--background);
+            color: var(--foreground-secondary);
+            font-size: 13px; cursor: pointer;
+            font-family: var(--font-mono);
+            transition: background .2s, border-color .2s, color .2s;
+        }
+        .preset-chip:hover { background: var(--background-subtle); border-color: var(--gray-300); }
+        .preset-chip.active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
+
+        /* 缩放：宽高 + 锁定比例 */
+        .resize-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: var(--space-2);
+            align-items: end;
+        }
+        .lock-btn {
+            width: 40px; height: 40px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            background: var(--background);
+            color: var(--foreground-secondary);
+            cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: background .2s, border-color .2s, color .2s;
+            margin-bottom: 1px;
+        }
+        .lock-btn.locked { color: var(--accent); border-color: var(--accent); background: var(--accent-subtle); }
+
+        .help-text { font-size: 13px; color: var(--foreground-tertiary); margin-top: 6px; line-height: 1.5; }
+
+        .format-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-3); }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+        .btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            height: 48px; padding: 0 22px;
+            font-size: 16px; font-weight: 500; line-height: 1;
+            border-radius: var(--radius-pill);
+            border: 1px solid transparent;
+            cursor: pointer; font-family: var(--font-sans);
+            transition: background .2s, border-color .2s, color .2s;
+        }
+        .btn-primary { background: var(--foreground); color: var(--background); }
+        .btn-primary:hover { background: var(--button-primary-hover); }
+        .btn-ghost { background: var(--background); color: var(--foreground-secondary); border-color: var(--gray-200); }
+        .btn-ghost:hover { background: var(--button-secondary-hover); }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* 预览区 */
+        .preview-wrap {
+            background: var(--background-muted);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 18px;
+            min-height: 480px;
+            max-height: 76vh;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-inner { position: relative; line-height: 0; max-width: 100%; }
+        #previewCanvas { max-width: 100%; height: auto; border-radius: var(--radius-sm); display: block; }
+
+        .empty-hint {
+            color: var(--foreground-tertiary); text-align: center;
+            padding: 60px 20px; font-size: 14px; line-height: 1.8;
+        }
+        .empty-hint .eh-icon { color: var(--foreground-tertiary); opacity: .6; margin-bottom: 12px; display: flex; justify-content: center; }
+
+        .preview-caption {
+            text-align: center; margin-top: var(--space-3);
+            font-size: var(--text-sm); color: var(--foreground-secondary);
+            font-family: var(--font-mono);
+        }
+        .preview-caption strong { color: var(--accent); font-weight: 600; }
+
+        .toast {
+            position: fixed; left: 50%; bottom: 32px; z-index: 1200;
+            transform: translateX(-50%) translateY(20px);
+            opacity: 0; pointer-events: none;
+            padding: 12px 20px; border-radius: var(--radius);
+            font-size: var(--text-base); font-weight: 500; color: #fff;
+            transition: transform .25s, opacity .25s; max-width: 90%;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: var(--accent); }
+        .toast.info { background: var(--accent); }
+        .toast.error { background: var(--danger); }
+
+        .theme-toggle {
+            position: fixed; top: 16px; right: 16px; z-index: 1100;
+            width: 40px; height: 40px; border-radius: var(--radius-full);
+            border: 1px solid var(--gray-200); background: var(--background); color: var(--foreground);
+            font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+            transition: background .2s, border-color .2s, transform .2s;
+        }
+        .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
+    </style>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t !== 'light' && t !== 'dark') {
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          if (t === 'dark') document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换深色 / 浅色模式" title="切换主题">
+            <span class="theme-toggle-icon">🌙</span>
+        </button>
+
+        <div class="header">
+            <h1>快速切图工具</h1>
+            <p class="subtitle">智能内容检测切图 · 网格等分 · 智能裁剪 · 像素缩放，本地处理不上传</p>
+        </div>
+
+        <div class="layout">
+            <!-- 左侧：选图与设置 -->
+            <div class="card">
+                <h2>① 选择图片</h2>
+                <label class="dropzone" id="dropzone" for="fileInput">
+                    <!-- 空态 -->
+                    <div class="dz-empty">
+                        <div class="dz-icon" aria-hidden="true">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <path d="M21 15l-5-5L5 21"/>
+                            </svg>
+                        </div>
+                        <div class="dz-title">点击选择 或 拖拽图片到此</div>
+                        <div class="dz-hint">支持 PNG / JPEG / WebP / GIF 等本地图片</div>
+                    </div>
+                    <!-- 加载态 -->
+                    <div class="dz-loaded">
+                        <img class="dz-thumb" id="dzThumb" alt="">
+                        <div class="dz-info">
+                            <div class="dz-filename" id="dzFilename"></div>
+                            <div class="dz-dims" id="dzDims"></div>
+                        </div>
+                        <span class="dz-change">重新选择</span>
+                    </div>
+                </label>
+                <input type="file" id="fileInput" accept="image/*">
+
+                <!-- 模式切换 -->
+                <div class="seg" role="tablist">
+                    <button class="seg-btn active" id="segGrid" type="button" onclick="switchMode('grid')">网格切图</button>
+                    <button class="seg-btn" id="segSmartSplit" type="button" onclick="switchMode('smartsplit')">智能切图</button>
+                    <button class="seg-btn" id="segSmartCrop" type="button" onclick="switchMode('smartcrop')">智能裁剪</button>
+                    <button class="seg-btn" id="segResize" type="button" onclick="switchMode('resize')">缩放尺寸</button>
+                </div>
+
+                <!-- 网格切图 -->
+                <div class="mode-panel active" id="panelGrid">
+                    <div class="input-group">
+                        <label for="gridInput">切分格式（列 × 行）</label>
+                        <input type="text" id="gridInput" value="2x2" placeholder="例如 2x2、3x2、4x1" spellcheck="false">
+                        <div class="presets">
+                            <span class="preset-chip" onclick="setGrid('2x2')">2×2</span>
+                            <span class="preset-chip" onclick="setGrid('3x3')">3×3</span>
+                            <span class="preset-chip" onclick="setGrid('3x2')">3×2</span>
+                            <span class="preset-chip" onclick="setGrid('4x4')">4×4</span>
+                            <span class="preset-chip" onclick="setGrid('1x2')">1×2</span>
+                            <span class="preset-chip" onclick="setGrid('2x1')">2×1</span>
+                        </div>
+                        <div class="help-text">填 <code>2x2</code> 即横向 2 列、纵向 2 行，等分为 4 张；多张自动打包为 ZIP 下载。</div>
+                    </div>
+                </div>
+
+                <!-- 智能切图（边缘+饱和度内容检测） -->
+                <div class="mode-panel" id="panelSmartSplit">
+                    <div class="input-group">
+                        <label for="splitSensitivity">检测灵敏度</label>
+                        <select id="splitSensitivity">
+                            <option value="0.05">高 — 检测细微内容</option>
+                            <option value="0.10" selected>中 — 适用于大部分场景</option>
+                            <option value="0.20">低 — 仅检测强内容</option>
+                        </select>
+                        <div class="help-text">基于行内亮度标准差自动识别内容区域（内容行像素变化大、背景行接近纯色），无需手动设阈值。切不出来选「高」，误切白边选「低」。</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="splitMergeGap">合并间隙（像素）</label>
+                        <input type="number" id="splitMergeGap" value="5" min="1" max="50" step="1">
+                        <div class="help-text">内容区域间 ≤ 此值的空白行/列会并入同一片段，避免碎裂。</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="splitDirection">检测方向</label>
+                        <select id="splitDirection">
+                            <option value="row" selected>横向切割（按行找空白，适合多横幅图）</option>
+                            <option value="col">纵向切割（按列找空白）</option>
+                            <option value="both">行+列网格（行列交叉切割）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 智能裁剪（smartcrop 算法） -->
+                <div class="mode-panel" id="panelSmartCrop">
+                    <div class="input-group">
+                        <label for="cropRatio">目标比例</label>
+                        <select id="cropRatio">
+                            <option value="1">1:1 正方形</option>
+                            <option value="1.7778">16:9 宽屏</option>
+                            <option value="1.3333">4:3 标准</option>
+                            <option value="1.5">3:2 摄影</option>
+                            <option value="2">2:1 超宽</option>
+                            <option value="0.5625">9:16 竖屏</option>
+                            <option value="custom">自定义…</option>
+                        </select>
+                        <div class="help-text">基于 smartcrop 算法：边缘检测 + 饱和度 + 三分构图法，自动找到视觉最突出的裁剪区域。</div>
+                    </div>
+                    <div class="input-group" id="customRatioGroup" style="display:none;">
+                        <label for="customRatio">自定义比例（宽:高）</label>
+                        <input type="text" id="customRatio" placeholder="例如 5:4 或 21:9" spellcheck="false">
+                    </div>
+                </div>
+
+                <!-- 缩放尺寸 -->
+                <div class="mode-panel" id="panelResize">
+                    <div class="input-group">
+                        <label>目标尺寸（像素）</label>
+                        <div class="resize-row">
+                            <div>
+                                <input type="number" id="widthInput" placeholder="宽" min="1" step="1">
+                            </div>
+                            <button class="lock-btn locked" id="lockBtn" type="button" onclick="toggleLock()" title="锁定宽高比例">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="lockIcon">
+                                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                                    <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                                </svg>
+                            </button>
+                            <div>
+                                <input type="number" id="heightInput" placeholder="高" min="1" step="1">
+                            </div>
+                        </div>
+                        <div class="help-text">填入目标 宽 / 高（像素）。锁定比例时改动其一，另一个按原图比例自动计算。</div>
+                    </div>
+                </div>
+
+                <!-- 输出格式 -->
+                <div class="format-row">
+                    <div class="input-group" style="margin:0;">
+                        <label for="fmtSelect">输出格式</label>
+                        <select id="fmtSelect">
+                            <option value="image/png" selected>PNG（无损）</option>
+                            <option value="image/jpeg">JPEG</option>
+                            <option value="image/webp">WebP</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label for="qualityInput">质量 (JPEG/WebP)</label>
+                        <input type="number" id="qualityInput" value="0.92" min="0.1" max="1" step="0.01" disabled>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="exportBtn" onclick="doExport()" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span id="exportLabel">切图并下载</span>
+                    </button>
+                    <button class="btn btn-ghost" onclick="clearAll()">清空</button>
+                </div>
+            </div>
+
+            <!-- 右侧：预览 -->
+            <div class="card">
+                <h2>② 预览</h2>
+                <div class="preview-wrap" id="previewWrap">
+                    <div class="empty-hint" id="emptyHint">
+                        <div class="eh-icon" aria-hidden="true">
+                            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <path d="M3 12h18M12 3v18"/>
+                            </svg>
+                        </div>
+                        选择图片后，这里会显示切割 / 裁剪预览
+                    </div>
+                    <div class="preview-inner" id="previewInner" style="display:none;">
+                        <canvas id="previewCanvas"></canvas>
+                    </div>
+                </div>
+                <div class="preview-caption" id="previewCaption"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        /* ========== 状态 ========== */
+        var img = null;
+        var imgName = 'image';
+        var mode = 'grid';
+        var ratioLocked = true;
+        var lastEdited = 'width';
+        var imgDataUrl = null;       // 缩略图 data URL（dropzone 预览用）
+        var smartSplitCache = null;  // 智能切图缓存 { data, w, h, scale }
+        var smartCropCache = null;   // 智能裁剪缓存 { sal, w, h, scale }
+        var smartCropResult = null;  // 智能裁剪结果 { x, y, w, h }（原图坐标）
+
+        /* ========== 工具函数 ========== */
+        function showToast(msg, type) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show ' + (type || 'info');
+            setTimeout(function () { t.className = 'toast'; }, 2600);
+        }
+        function escapeHtml(s) { return s.replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+        function formatSize(b) {
+            if (b < 1024) return b + ' B';
+            if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+            return (b / 1024 / 1024).toFixed(2) + ' MB';
+        }
+        function cie(r, g, b) { return 0.5126 * b + 0.7152 * g + 0.0722 * r; }
+
+        /* ========== 选图 ========== */
+        var dz = document.getElementById('dropzone');
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            if (e.target.files && e.target.files[0]) loadImageFile(e.target.files[0]);
+            e.target.value = '';
+        });
+        ['dragenter', 'dragover'].forEach(function (ev) {
+            dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('dragover'); });
+        });
+        ['dragleave', 'drop'].forEach(function (ev) {
+            dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove('dragover'); });
+        });
+        dz.addEventListener('drop', function (e) {
+            var f = e.dataTransfer.files && e.dataTransfer.files[0];
+            if (f) loadImageFile(f);
+        });
+
+        function loadImageFile(file) {
+            if (!file.type.startsWith('image/')) { showToast('请选择图片文件', 'error'); return; }
+            imgName = file.name.replace(/\.[^.]+$/, '') || 'image';
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+                var im = new Image();
+                im.onload = function () {
+                    img = im;
+                    imgDataUrl = ev.target.result;
+                    // 更新 dropzone 为加载态
+                    dz.classList.add('loaded');
+                    document.getElementById('dzThumb').src = ev.target.result;
+                    document.getElementById('dzFilename').textContent = file.name;
+                    document.getElementById('dzDims').textContent = im.naturalWidth + ' × ' + im.naturalHeight + ' px · ' + formatSize(file.size);
+                    // 缩放模式默认值
+                    document.getElementById('widthInput').value = im.naturalWidth;
+                    document.getElementById('heightInput').value = im.naturalHeight;
+                    // 清除缓存
+                    smartSplitCache = null;
+                    smartCropCache = null;
+                    smartCropResult = null;
+                    document.getElementById('exportBtn').disabled = false;
+                    document.getElementById('emptyHint').style.display = 'none';
+                    document.getElementById('previewInner').style.display = 'block';
+                    renderPreview();
+                    showToast('已载入：' + file.name, 'success');
+                };
+                im.onerror = function () { showToast('图片解码失败', 'error'); };
+                im.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /* ========== 模式切换 ========== */
+        function switchMode(m) {
+            mode = m;
+            var btns = { grid: 'segGrid', smartsplit: 'segSmartSplit', smartcrop: 'segSmartCrop', resize: 'segResize' };
+            var panels = { grid: 'panelGrid', smartsplit: 'panelSmartSplit', smartcrop: 'panelSmartCrop', resize: 'panelResize' };
+            var labels = { grid: '切图并下载', smartsplit: '智能切图', smartcrop: '智能裁剪', resize: '缩放并下载' };
+            for (var k in btns) {
+                document.getElementById(btns[k]).classList.toggle('active', k === m);
+                document.getElementById(panels[k]).classList.toggle('active', k === m);
+            }
+            document.getElementById('exportLabel').textContent = labels[m];
+            renderPreview();
+        }
+
+        /* ========== 网格模式 ========== */
+        function setGrid(v) { document.getElementById('gridInput').value = v; renderPreview(); }
+        document.getElementById('gridInput').addEventListener('input', renderPreview);
+
+        function parseGrid() {
+            var raw = document.getElementById('gridInput').value.trim();
+            var m = raw.match(/^(\d+)\s*[x×*]\s*(\d+)$/i);
+            if (!m) return null;
+            var cols = parseInt(m[1], 10), rows = parseInt(m[2], 10);
+            if (cols < 1 || rows < 1 || cols > 50 || rows > 50) return null;
+            return { cols: cols, rows: rows };
+        }
+
+        /* ========== 缩放模式 ========== */
+        function toggleLock() {
+            ratioLocked = !ratioLocked;
+            var btn = document.getElementById('lockBtn');
+            btn.classList.toggle('locked', ratioLocked);
+            btn.title = ratioLocked ? '已锁定宽高比例' : '未锁定（自由缩放）';
+            document.getElementById('lockIcon').innerHTML = ratioLocked
+                ? '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'
+                : '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/>';
+        }
+        document.getElementById('widthInput').addEventListener('input', function () {
+            lastEdited = 'width';
+            if (ratioLocked && img) {
+                var w = parseInt(this.value, 10);
+                if (w > 0) document.getElementById('heightInput').value = Math.round(w * img.naturalHeight / img.naturalWidth);
+            }
+            renderPreview();
+        });
+        document.getElementById('heightInput').addEventListener('input', function () {
+            lastEdited = 'height';
+            if (ratioLocked && img) {
+                var h = parseInt(this.value, 10);
+                if (h > 0) document.getElementById('widthInput').value = Math.round(h * img.naturalWidth / img.naturalHeight);
+            }
+            renderPreview();
+        });
+
+        /* ========== smartcrop 核心算法 ========== */
+
+        // 降采样获取像素数据
+        function getDownsampledData(maxSize) {
+            var scale = Math.min(1, maxSize / Math.max(img.naturalWidth, img.naturalHeight));
+            var w = Math.max(1, Math.round(img.naturalWidth * scale));
+            var h = Math.max(1, Math.round(img.naturalHeight * scale));
+            var cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            var ctx = cv.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            return {
+                data: ctx.getImageData(0, 0, w, h).data,
+                width: w, height: h, scale: scale
+            };
+        }
+
+        // 计算显著度图（边缘 + 饱和度）
+        // 算法参考 smartcrop.js: Laplacian 边缘检测 + HSL 饱和度
+        function computeSaliencyMap(d, w, h) {
+            var sal = new Float32Array(w * h);
+            for (var y = 0; y < h; y++) {
+                for (var x = 0; x < w; x++) {
+                    var p = (y * w + x) * 4;
+                    var r = d[p], g = d[p + 1], b = d[p + 2];
+                    var lum = cie(r, g, b) / 255;
+
+                    // Laplacian 边缘检测: center*4 - N - S - E - W
+                    var edge = 0;
+                    if (x > 0 && x < w - 1 && y > 0 && y < h - 1) {
+                        var pN = p - w * 4, pS = p + w * 4, pE = p + 4, pW = p - 4;
+                        var lumN = cie(d[pN], d[pN + 1], d[pN + 2]) / 255;
+                        var lumS = cie(d[pS], d[pS + 1], d[pS + 2]) / 255;
+                        var lumE = cie(d[pE], d[pE + 1], d[pE + 2]) / 255;
+                        var lumW = cie(d[pW], d[pW + 1], d[pW + 2]) / 255;
+                        edge = Math.abs(lum * 4 - lumN - lumS - lumE - lumW);
+                    }
+
+                    // HSL 饱和度
+                    var maxc = Math.max(r, g, b) / 255;
+                    var minc = Math.min(r, g, b) / 255;
+                    var sat = maxc === minc ? 0
+                        : (maxc - minc) / (maxc > 0.5 ? 2 - maxc - minc : maxc + minc);
+
+                    sal[y * w + x] = edge * 0.6 + sat * 0.4;
+                }
+            }
+            return sal;
+        }
+
+        // 智能切图：基于行/列内亮度标准差找内容带
+        // 标准差高 = 内容（像素变化大），标准差低 = 背景（接近纯色）
+        function getSmartSplitBands() {
+            if (!img) return null;
+            if (!smartSplitCache) {
+                var ds = getDownsampledData(512);
+                smartSplitCache = {
+                    data: ds.data, w: ds.width, h: ds.height, scale: ds.scale
+                };
+            }
+            var d = smartSplitCache.data, w = smartSplitCache.w, h = smartSplitCache.h, scale = smartSplitCache.scale;
+            var sensitivity = parseFloat(document.getElementById('splitSensitivity').value) || 0.10;
+            var mergeGapOrig = parseInt(document.getElementById('splitMergeGap').value, 10) || 5;
+            var mergeGap = Math.max(1, Math.round(mergeGapOrig * scale));
+            var dir = document.getElementById('splitDirection').value;
+
+            function findBands(axisDim, crossDim, isRow) {
+                // 逐行/列计算 CIE 亮度标准差
+                var scores = new Float32Array(axisDim);
+                var maxScore = 0;
+                for (var a = 0; a < axisDim; a++) {
+                    // 第一遍：求均值
+                    var sum = 0;
+                    for (var c = 0; c < crossDim; c++) {
+                        var p = isRow ? (a * w + c) * 4 : (c * w + a) * 4;
+                        sum += cie(d[p], d[p + 1], d[p + 2]) / 255;
+                    }
+                    var mean = sum / crossDim;
+                    // 第二遍：求方差
+                    var sumSq = 0;
+                    for (var c = 0; c < crossDim; c++) {
+                        var p2 = isRow ? (a * w + c) * 4 : (c * w + a) * 4;
+                        var lum = cie(d[p2], d[p2 + 1], d[p2 + 2]) / 255;
+                        var diff = lum - mean;
+                        sumSq += diff * diff;
+                    }
+                    scores[a] = Math.sqrt(sumSq / crossDim);
+                    if (scores[a] > maxScore) maxScore = scores[a];
+                }
+                var threshold = maxScore * sensitivity;
+                // mask
+                var mask = new Uint8Array(axisDim);
+                for (var i = 0; i < axisDim; i++) mask[i] = scores[i] > threshold ? 1 : 0;
+                // 合并间隙
+                for (var i = 0; i < axisDim; i++) {
+                    if (mask[i] === 0) {
+                        for (var j = i + 1; j <= i + mergeGap && j < axisDim; j++) {
+                            if (mask[j] === 1) {
+                                for (var k = i; k < j; k++) mask[k] = 1;
+                                i = j; break;
+                            }
+                        }
+                    }
+                }
+                // 找连续段
+                var bands = [], inBand = false, start = 0;
+                for (var i = 0; i < axisDim; i++) {
+                    if (mask[i] === 1 && !inBand) { inBand = true; start = i; }
+                    else if (mask[i] === 0 && inBand) { inBand = false; bands.push([start, i - 1]); }
+                }
+                if (inBand) bands.push([start, axisDim - 1]);
+                // 还原到原图坐标
+                return bands.map(function (b) {
+                    return [Math.round(b[0] / scale), Math.round((b[1] + 1) / scale) - 1];
+                });
+            }
+
+            var rows = [], cols = [];
+            if (dir === 'row') rows = findBands(h, w, true);
+            else if (dir === 'col') cols = findBands(w, h, false);
+            else { rows = findBands(h, w, true); cols = findBands(w, h, false); }
+
+            if (rows.length === 0 && cols.length === 0) return { rows: [], cols: [], total: 0 };
+            if (rows.length === 0) rows = [[0, img.naturalHeight - 1]];
+            if (cols.length === 0) cols = [[0, img.naturalWidth - 1]];
+            return { rows: rows, cols: cols, total: rows.length * cols.length };
+        }
+
+        // 三分构图法权重
+        function thirds(x) {
+            x = (((x - 1 / 3 + 1.0) % 2.0) * 0.5 - 0.5) * 16;
+            return Math.max(1.0 - x * x, 0.0);
+        }
+
+        // 像素重要性（中心高、边缘低、三分法加成）
+        function importance(crop, x, y) {
+            if (x < crop.x || x >= crop.x + crop.w || y < crop.y || y >= crop.y + crop.h) return -0.5;
+            var px = Math.abs(0.5 - (x - crop.x) / crop.w) * 2;
+            var py = Math.abs(0.5 - (y - crop.y) / crop.h) * 2;
+            var dx = Math.max(px - 1.0 + 0.3, 0);
+            var dy = Math.max(py - 1.0 + 0.3, 0);
+            var d = (dx * dx + dy * dy) * (-20);
+            var s = 1.41 - Math.sqrt(px * px + py * py);
+            s += Math.max(0, s + d + 0.5) * 1.2 * (thirds(px) + thirds(py));
+            return s + d;
+        }
+
+        // 智能裁剪：找最佳裁剪区域
+        function getSmartCropResult() {
+            if (!img) return null;
+            if (!smartCropCache) {
+                var ds = getDownsampledData(256);
+                smartCropCache = {
+                    sal: computeSaliencyMap(ds.data, ds.width, ds.height),
+                    w: ds.width, h: ds.height, scale: ds.scale
+                };
+            }
+            var sal = smartCropCache.sal, w = smartCropCache.w, h = smartCropCache.h, scale = smartCropCache.scale;
+
+            // 目标比例
+            var ratioVal = document.getElementById('cropRatio').value;
+            var ratio;
+            if (ratioVal === 'custom') {
+                var raw = document.getElementById('customRatio').value.trim();
+                var m = raw.match(/^(\d+(?:\.\d+)?)\s*[:：]\s*(\d+(?:\.\d+)?)$/);
+                if (!m) return null;
+                ratio = parseFloat(m[1]) / parseFloat(m[2]);
+            } else {
+                ratio = parseFloat(ratioVal);
+            }
+            if (!ratio || ratio <= 0) return null;
+
+            // 裁剪尺寸（在缩放图上）
+            var cropW, cropH;
+            if (w / h > ratio) { cropH = h; cropW = Math.round(h * ratio); }
+            else { cropW = w; cropH = Math.round(w / ratio); }
+            if (cropW > w) cropW = w;
+            if (cropH > h) cropH = h;
+
+            // 滑窗搜索
+            var stepX = Math.max(1, Math.floor((w - cropW) / 30));
+            var stepY = Math.max(1, Math.floor((h - cropH) / 30));
+            var sampleStep = Math.max(1, Math.floor(Math.min(cropW, cropH) / 60));
+            var bestScore = -Infinity, best = null;
+
+            for (var y = 0; y <= h - cropH; y += stepY) {
+                for (var x = 0; x <= w - cropW; x += stepX) {
+                    var crop = { x: x, y: y, w: cropW, h: cropH };
+                    var score = 0, count = 0;
+                    for (var cy = y; cy < y + cropH; cy += sampleStep) {
+                        for (var cx = x; cx < x + cropW; cx += sampleStep) {
+                            var imp = importance(crop, cx, cy);
+                            if (imp > 0) {
+                                score += sal[cy * w + cx] * imp;
+                                count++;
+                            }
+                        }
+                    }
+                    score = count > 0 ? score / count : 0;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        best = { x: x, y: y, w: cropW, h: cropH };
+                    }
+                }
+            }
+            if (!best) return null;
+            // 还原到原图坐标
+            return {
+                x: Math.round(best.x / scale),
+                y: Math.round(best.y / scale),
+                w: Math.round(best.w / scale),
+                h: Math.round(best.h / scale)
+            };
+        }
+
+        // 事件监听
+        document.getElementById('splitSensitivity').addEventListener('change', renderPreview);
+        document.getElementById('splitMergeGap').addEventListener('input', renderPreview);
+        document.getElementById('splitDirection').addEventListener('change', renderPreview);
+        document.getElementById('cropRatio').addEventListener('change', function () {
+            document.getElementById('customRatioGroup').style.display = this.value === 'custom' ? 'block' : 'none';
+            renderPreview();
+        });
+        document.getElementById('customRatio').addEventListener('input', renderPreview);
+
+        /* ========== 预览 ========== */
+        function renderPreview() {
+            if (!img) return;
+            var caption = document.getElementById('previewCaption');
+            var canvas = document.getElementById('previewCanvas');
+            var ctx = canvas.getContext('2d');
+
+            var maxSide = 900;
+            var scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+            var vw = Math.round(img.naturalWidth * scale);
+            var vh = Math.round(img.naturalHeight * scale);
+            canvas.width = vw; canvas.height = vh;
+            ctx.clearRect(0, 0, vw, vh);
+            ctx.drawImage(img, 0, 0, vw, vh);
+
+            if (mode === 'grid') {
+                var g = parseGrid();
+                if (!g) {
+                    caption.innerHTML = '<span style="color:var(--danger)">格式无效，请输入如 2x2</span>';
+                    return;
+                }
+                ctx.strokeStyle = '#0070f3'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+                for (var c = 1; c < g.cols; c++) {
+                    var x = Math.round(vw * c / g.cols) + 0.5;
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, vh); ctx.stroke();
+                }
+                for (var r = 1; r < g.rows; r++) {
+                    var y = Math.round(vh * r / g.rows) + 0.5;
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(vw, y); ctx.stroke();
+                }
+                ctx.setLineDash([]);
+                caption.innerHTML = '切分为 <strong>' + g.cols + ' × ' + g.rows + ' = ' + (g.cols * g.rows) +
+                    '</strong> 张　·　每张约 ' + Math.round(img.naturalWidth / g.cols) + ' × ' + Math.round(img.naturalHeight / g.rows) + ' px';
+
+            } else if (mode === 'smartsplit') {
+                var bands = getSmartSplitBands();
+                if (!bands || bands.total === 0) {
+                    caption.innerHTML = '<span style="color:var(--danger)">未检测到内容区域，请调高灵敏度</span>';
+                    return;
+                }
+                ctx.fillStyle = 'rgba(0,112,243,0.08)';
+                ctx.strokeStyle = '#0070f3'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+                var cellIdx = 0;
+                for (var r2 = 0; r2 < bands.rows.length; r2++) {
+                    for (var c2 = 0; c2 < bands.cols.length; c2++) {
+                        var y0 = Math.round(bands.rows[r2][0] * scale);
+                        var y1 = Math.round((bands.rows[r2][1] + 1) * scale);
+                        var x0 = Math.round(bands.cols[c2][0] * scale);
+                        var x1 = Math.round((bands.cols[c2][1] + 1) * scale);
+                        cellIdx++;
+                        ctx.fillStyle = 'rgba(0,112,243,0.08)';
+                        ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+                        ctx.strokeStyle = '#0070f3';
+                        ctx.strokeRect(x0 + 0.5, y0 + 0.5, x1 - x0 - 1, y1 - y0 - 1);
+                        ctx.setLineDash([]);
+                        ctx.fillStyle = 'rgba(0,112,243,0.85)';
+                        ctx.font = 'bold 12px ' + getComputedStyle(document.body).fontFamily;
+                        ctx.textBaseline = 'top';
+                        ctx.fillText(cellIdx, x0 + 8, y0 + 8);
+                        ctx.setLineDash([6, 4]);
+                    }
+                }
+                ctx.setLineDash([]);
+                var rh = bands.rows.map(function (r) { return r[1] - r[0] + 1; });
+                var cw = bands.cols.map(function (c) { return c[1] - c[0] + 1; });
+                caption.innerHTML = '检测到 <strong>' + bands.total + '</strong> 个内容区域　·　' +
+                    (bands.rows.length > 1 ? bands.rows.length + ' 行（' + rh.join(', ') + 'px）' : '') +
+                    (bands.cols.length > 1 ? ' ' + bands.cols.length + ' 列（' + cw.join(', ') + 'px）' : '');
+
+            } else if (mode === 'smartcrop') {
+                smartCropResult = getSmartCropResult();
+                if (!smartCropResult) {
+                    var ratioVal = document.getElementById('cropRatio').value;
+                    if (ratioVal === 'custom') {
+                        caption.innerHTML = '<span style="color:var(--danger)">请输入有效比例，如 5:4</span>';
+                    } else {
+                        caption.innerHTML = '<span style="color:var(--danger)">无法计算裁剪区域</span>';
+                    }
+                    return;
+                }
+                var cx0 = Math.round(smartCropResult.x * scale);
+                var cy0 = Math.round(smartCropResult.y * scale);
+                var cx1 = Math.round((smartCropResult.x + smartCropResult.w) * scale);
+                var cy1 = Math.round((smartCropResult.y + smartCropResult.h) * scale);
+                // 遮罩外部区域
+                ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                ctx.fillRect(0, 0, vw, cy0);
+                ctx.fillRect(0, cy1, vw, vh - cy1);
+                ctx.fillRect(0, cy0, cx0, cy1 - cy0);
+                ctx.fillRect(cx1, cy0, vw - cx1, cy1 - cy0);
+                // 裁剪框
+                ctx.strokeStyle = '#0070f3'; ctx.lineWidth = 3; ctx.setLineDash([]);
+                ctx.strokeRect(cx0 + 1, cy0 + 1, cx1 - cx0 - 2, cy1 - cy0 - 2);
+                // 三分线
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+                for (var t = 1; t < 3; t++) {
+                    ctx.beginPath(); ctx.moveTo(cx0 + (cx1 - cx0) * t / 3, cy0); ctx.lineTo(cx0 + (cx1 - cx0) * t / 3, cy1); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx0, cy0 + (cy1 - cy0) * t / 3); ctx.lineTo(cx1, cy0 + (cy1 - cy0) * t / 3); ctx.stroke();
+                }
+                ctx.setLineDash([]);
+                caption.innerHTML = '智能裁剪 <strong>' + smartCropResult.w + ' × ' + smartCropResult.h + '</strong> px　·　' +
+                    '位置 (' + smartCropResult.x + ', ' + smartCropResult.y + ')　·　原图 ' + img.naturalWidth + ' × ' + img.naturalHeight;
+
+            } else {
+                var tw = parseInt(document.getElementById('widthInput').value, 10) || img.naturalWidth;
+                var th = parseInt(document.getElementById('heightInput').value, 10) || img.naturalHeight;
+                caption.innerHTML = '缩放为 <strong>' + tw + ' × ' + th + '</strong> px　·　原图 ' +
+                    img.naturalWidth + ' × ' + img.naturalHeight + ' px';
+            }
+        }
+
+        /* ========== 导出 ========== */
+        function outExt() {
+            var f = document.getElementById('fmtSelect').value;
+            return f === 'image/jpeg' ? 'jpg' : (f === 'image/webp' ? 'webp' : 'png');
+        }
+        function outQuality() {
+            var q = parseFloat(document.getElementById('qualityInput').value);
+            if (isNaN(q) || q <= 0 || q > 1) q = 0.92;
+            return q;
+        }
+        function canvasToBlob(canvas) {
+            var fmt = document.getElementById('fmtSelect').value;
+            var q = outQuality();
+            return new Promise(function (resolve) { canvas.toBlob(function (b) { resolve(b); }, fmt, q); });
+        }
+
+        async function doExport() {
+            if (!img) { showToast('请先选择图片', 'error'); return; }
+            var btn = document.getElementById('exportBtn');
+            btn.disabled = true;
+            try {
+                if (mode === 'grid') await exportGrid();
+                else if (mode === 'smartsplit') await exportSmartSplit();
+                else if (mode === 'smartcrop') await exportSmartCrop();
+                else await exportResize();
+            } catch (e) {
+                console.error(e);
+                showToast('导出失败：' + (e.message || e), 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function exportGrid() {
+            var g = parseGrid();
+            if (!g) { showToast('切分格式无效', 'error'); return; }
+            var W = img.naturalWidth, H = img.naturalHeight, ext = outExt();
+            if (g.cols === 1 && g.rows === 1) {
+                var cv = document.createElement('canvas');
+                cv.width = W; cv.height = H;
+                cv.getContext('2d').drawImage(img, 0, 0);
+                downloadBlob(await canvasToBlob(cv), imgName + '.' + ext);
+                showToast('已导出 1 张', 'success'); return;
+            }
+            showToast('正在切图打包…', 'info');
+            var zip = new JSZip();
+            for (var r = 0; r < g.rows; r++) {
+                var y0 = Math.round(H * r / g.rows), y1 = Math.round(H * (r + 1) / g.rows);
+                for (var c = 0; c < g.cols; c++) {
+                    var x0 = Math.round(W * c / g.cols), x1 = Math.round(W * (c + 1) / g.cols);
+                    var sw = x1 - x0, sh = y1 - y0;
+                    var cv2 = document.createElement('canvas');
+                    cv2.width = sw; cv2.height = sh;
+                    cv2.getContext('2d').drawImage(img, x0, y0, sw, sh, 0, 0, sw, sh);
+                    zip.file(imgName + '_' + String(r + 1).padStart(2, '0') + 'x' + String(c + 1).padStart(2, '0') + '.' + ext, await canvasToBlob(cv2));
+                }
+            }
+            downloadBlob(await zip.generateAsync({ type: 'blob' }), imgName + '_' + g.cols + 'x' + g.rows + '_切图.zip');
+            showToast('成功切分 ' + (g.cols * g.rows) + ' 张并打包', 'success');
+        }
+
+        async function exportSmartSplit() {
+            var bands = getSmartSplitBands();
+            if (!bands || bands.total === 0) { showToast('未检测到内容区域，请调高灵敏度', 'error'); return; }
+            var ext = outExt();
+            if (bands.total === 1) {
+                var r0 = bands.rows[0], c0 = bands.cols[0];
+                var cv = document.createElement('canvas');
+                cv.width = c0[1] - c0[0] + 1; cv.height = r0[1] - r0[0] + 1;
+                cv.getContext('2d').drawImage(img, c0[0], r0[0], cv.width, cv.height, 0, 0, cv.width, cv.height);
+                downloadBlob(await canvasToBlob(cv), imgName + '_crop.' + ext);
+                showToast('已导出 1 张', 'success'); return;
+            }
+            showToast('正在智能切图打包…', 'info');
+            var zip = new JSZip();
+            var idx = 0;
+            for (var r = 0; r < bands.rows.length; r++) {
+                for (var c = 0; c < bands.cols.length; c++) {
+                    var x0 = bands.cols[c][0], y0 = bands.rows[r][0];
+                    var sw = bands.cols[c][1] - x0 + 1, sh = bands.rows[r][1] - y0 + 1;
+                    var cv2 = document.createElement('canvas');
+                    cv2.width = sw; cv2.height = sh;
+                    cv2.getContext('2d').drawImage(img, x0, y0, sw, sh, 0, 0, sw, sh);
+                    idx++;
+                    zip.file(imgName + '_' + String(r + 1).padStart(2, '0') + 'x' + String(c + 1).padStart(2, '0') + '.' + ext, await canvasToBlob(cv2));
+                }
+            }
+            downloadBlob(await zip.generateAsync({ type: 'blob' }), imgName + '_智能切图.zip');
+            showToast('成功切分 ' + idx + ' 张并打包', 'success');
+        }
+
+        async function exportSmartCrop() {
+            if (!smartCropResult) { showToast('无法计算裁剪区域', 'error'); return; }
+            var ext = outExt();
+            var cv = document.createElement('canvas');
+            cv.width = smartCropResult.w; cv.height = smartCropResult.h;
+            cv.getContext('2d').drawImage(img, smartCropResult.x, smartCropResult.y, smartCropResult.w, smartCropResult.h, 0, 0, smartCropResult.w, smartCropResult.h);
+            downloadBlob(await canvasToBlob(cv), imgName + '_smartcrop.' + ext);
+            showToast('已导出智能裁剪 ' + smartCropResult.w + '×' + smartCropResult.h, 'success');
+        }
+
+        async function exportResize() {
+            var tw = parseInt(document.getElementById('widthInput').value, 10);
+            var th = parseInt(document.getElementById('heightInput').value, 10);
+            if (!tw || !th || tw < 1 || th < 1) { showToast('请输入有效的宽高像素', 'error'); return; }
+            var cv = document.createElement('canvas');
+            cv.width = tw; cv.height = th;
+            var ctx = cv.getContext('2d');
+            ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, tw, th);
+            downloadBlob(await canvasToBlob(cv), imgName + '_' + tw + 'x' + th + '.' + outExt());
+            showToast('已导出 ' + tw + ' × ' + th, 'success');
+        }
+
+        function downloadBlob(blob, filename) {
+            var a = document.createElement('a');
+            a.download = filename; a.href = URL.createObjectURL(blob); a.click();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+        }
+
+        function clearAll() {
+            img = null; imgName = 'image'; imgDataUrl = null;
+            smartSplitCache = null; smartCropCache = null; smartCropResult = null;
+            dz.classList.remove('loaded');
+            document.getElementById('dzThumb').src = '';
+            document.getElementById('meta').classList.remove('show');
+            document.getElementById('exportBtn').disabled = true;
+            document.getElementById('emptyHint').style.display = 'block';
+            document.getElementById('previewInner').style.display = 'none';
+            document.getElementById('previewCaption').innerHTML = '';
+            document.getElementById('widthInput').value = '';
+            document.getElementById('heightInput').value = '';
+            document.getElementById('gridInput').value = '2x2';
+            document.getElementById('splitSensitivity').value = '0.10';
+            document.getElementById('splitMergeGap').value = '5';
+            document.getElementById('splitDirection').value = 'row';
+            document.getElementById('cropRatio').value = '1';
+            document.getElementById('customRatioGroup').style.display = 'none';
+            document.getElementById('customRatio').value = '';
+            showToast('已清空');
+        }
+
+        // 格式选择联动
+        document.getElementById('fmtSelect').addEventListener('change', function () {
+            document.getElementById('qualityInput').disabled = this.value === 'image/png';
+        });
+    </script>
+
+    <script>
+      (function () {
+        var btn = document.getElementById('themeToggle');
+        if (!btn) return;
+        function syncIcon() {
+          var isDark = document.documentElement.classList.contains('dark');
+          btn.querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+          btn.title = isDark ? '切换到浅色' : '切换到深色';
+        }
+        function applyTheme(t) {
+          if (t === 'dark') document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+          try { localStorage.setItem('theme', t); } catch (e) {}
+          syncIcon();
+          if (typeof window.__onThemeChange === 'function') window.__onThemeChange(t);
+        }
+        btn.addEventListener('click', function () {
+          applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+        });
+        syncIcon();
+      })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>表格合并工具 · MiniTools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --background: #ffffff;
+      --background-subtle: #fafafa;
+      --background-muted: #f5f5f5;
+      --foreground: #171717;
+      --foreground-secondary: #666666;
+      --foreground-tertiary: #999999;
+      --gray-200: #eaeaea;
+      --gray-300: #d4d4d4;
+      --gray-700: #333333;
+      --accent: #0070f3;
+      --accent-hover: #0061d5;
+      --accent-subtle: #f0f7ff;
+      --danger: #d00;
+      --danger-subtle: #ffe0e0;
+      --button-primary-hover: #383838;
+      --button-secondary-hover: #f2f2f2;
+      --font-sans: "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: "Geist Mono", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+      --text-xs: 12px; --text-sm: 13px; --text-base: 14px;
+      --text-md: 16px; --text-lg: 20px; --text-xl: 28px;
+      --space-1: 4px; --space-2: 8px; --space-3: 16px;
+      --space-4: 24px; --space-5: 32px; --space-6: 48px;
+      --radius: 8px; --radius-sm: 6px;
+      --radius-pill: 128px; --radius-full: 9999px;
+    }
+    :root.dark {
+      --background: #0a0a0a;
+      --background-subtle: #111111;
+      --background-muted: #1a1a1a;
+      --foreground: #ededed;
+      --foreground-secondary: #a0a0a0;
+      --foreground-tertiary: #666666;
+      --gray-200: #333333;
+      --gray-300: #444444;
+      --gray-700: #cccccc;
+      --accent: #0070f3;
+      --accent-hover: #3291ff;
+      --accent-subtle: #0a2540;
+      --danger: #ff6b6b;
+      --danger-subtle: #3a1d1d;
+      --button-primary-hover: #cccccc;
+      --button-secondary-hover: #1a1a1a;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--background-subtle);
+      color: var(--foreground);
+      min-height: 100vh;
+      padding: var(--space-4);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* 文档型居中头部（与 json-formatter / html-to-pdf 一致） */
+    .header { text-align: center; margin-bottom: var(--space-5); }
+    .header h1 {
+      font-size: var(--text-xl); font-weight: 700;
+      letter-spacing: -0.02em; color: var(--foreground);
+      margin-bottom: var(--space-2);
+    }
+    .header p { font-size: var(--text-base); color: var(--foreground-secondary); }
+
+    /* 卡片：细边框，无阴影 */
+    .card {
+      background: var(--background);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); width: 100%; }
+    .upload-column { width: 100%; min-width: 0; display: flex; flex-direction: column; }
+    @media (max-width: 768px) {
+      .upload-section { grid-template-columns: 1fr; }
+      .upload-column { width: 100%; }
+    }
+
+    /* 上传区：虚线灰边（与 .file-label 语义一致），hover 浅灰底；已加载用实线灰边，不变绿 */
+    .upload-box {
+      border: 1px dashed var(--gray-300);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+      background: var(--background);
+      width: 100%;
+    }
+    .upload-box:hover, .upload-box.drag-over {
+      border-color: var(--gray-300);
+      background: var(--background-subtle);
+    }
+    .upload-box.drag-over { border-style: solid; }
+    .upload-box.has-file {
+      border-style: solid;
+      border-color: var(--gray-200);
+      background: var(--background-subtle);
+    }
+    .upload-icon {
+      width: 48px; height: 48px; margin: 0 auto var(--space-3);
+      color: var(--foreground-tertiary);
+    }
+    .upload-box.has-file .upload-icon { color: var(--foreground-secondary); }
+    .upload-text { font-size: var(--text-base); color: var(--foreground-secondary); }
+    .upload-hint { font-size: var(--text-xs); color: var(--foreground-tertiary); margin-top: var(--space-1); }
+    .file-input { display: none; }
+    .file-info { display: flex; align-items: center; justify-content: center; gap: var(--space-1); flex-wrap: wrap; }
+    .file-name { font-weight: 500; color: var(--foreground); font-size: var(--text-base); }
+    .file-size { font-size: var(--text-xs); color: var(--foreground-secondary); }
+    .clear-btn {
+      color: var(--foreground-tertiary); font-size: var(--text-xs);
+      cursor: pointer; text-decoration: underline;
+      transition: color .2s;
+    }
+    .clear-btn:hover { color: var(--foreground); }
+
+    /* 预览表格 */
+    .preview-table-container {
+      margin-top: var(--space-3); max-height: 500px; width: 100%;
+      overflow: auto; border: 1px solid var(--gray-200); border-radius: var(--radius);
+    }
+    .preview-table-container table { min-width: 100%; }
+    .preview-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .preview-table th {
+      background: var(--background-muted);
+      padding: 10px 12px; text-align: left; font-weight: 500;
+      color: var(--foreground); position: sticky; top: 0;
+      border-bottom: 1px solid var(--gray-200); white-space: nowrap;
+    }
+    .preview-table td {
+      padding: 8px 12px; border-bottom: 1px solid var(--gray-200);
+      color: var(--foreground-secondary); max-width: 200px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .preview-table tr:nth-child(odd) td { background: var(--background-subtle); }
+    .preview-table tr:last-child td { border-bottom: none; }
+    .row-count { font-size: var(--text-xs); color: var(--foreground-secondary); margin-top: var(--space-1); text-align: right; }
+
+    /* 区块标题：去掉蓝色竖条，改为 h2 风格 */
+    .section-title {
+      font-size: var(--text-md); font-weight: 600;
+      letter-spacing: -0.01em; color: var(--foreground);
+      margin-bottom: var(--space-3);
+    }
+
+    .field-section { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); width: 100%; }
+    .field-column { width: 100%; min-width: 0; display: flex; flex-direction: column; }
+    @media (max-width: 768px) {
+      .field-section { grid-template-columns: 1fr; }
+      .field-column { width: 100%; }
+    }
+
+    .field-box {
+      border: 1px solid var(--gray-200); border-radius: var(--radius);
+      padding: var(--space-3); width: 100%;
+    }
+    .field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
+    .field-title { font-weight: 500; font-size: var(--text-base); color: var(--foreground); }
+    .field-actions { display: flex; gap: var(--space-1); }
+    .field-btn {
+      font-size: var(--text-xs); padding: 4px 8px;
+      border: 1px solid var(--gray-200); background: var(--background);
+      color: var(--foreground-secondary); border-radius: var(--radius-sm);
+      cursor: pointer; transition: background .2s, color .2s;
+    }
+    .field-btn:hover { background: var(--background-muted); color: var(--foreground); }
+    .field-list { max-height: 200px; overflow-y: auto; }
+    .field-item {
+      display: flex; align-items: center; padding: 8px 12px;
+      border-radius: var(--radius-sm); cursor: pointer; transition: background .2s;
+    }
+    .field-item:hover { background: var(--background-subtle); }
+    .field-item input { margin-right: 10px; width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+    .field-item label { font-size: var(--text-sm); cursor: pointer; color: var(--foreground); }
+
+    .merge-options { display: flex; align-items: center; gap: var(--space-4); margin: var(--space-3) 0; flex-wrap: wrap; }
+    .merge-mode { display: flex; align-items: center; gap: var(--space-2); }
+    .merge-mode label { font-size: var(--text-base); font-weight: 500; color: var(--foreground); }
+    .merge-mode select {
+      padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius);
+      font-size: var(--text-base); font-family: var(--font-sans);
+      color: var(--foreground); background: var(--background); cursor: pointer;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .merge-mode select:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-subtle);
+    }
+
+    /* 按钮：黑底胶囊主按钮 + 灰边次按钮 + 红边危险按钮 */
+    .action-buttons { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4); }
+    .btn {
+      display: inline-flex; align-items: center; gap: var(--space-2);
+      height: 48px; padding: 0 20px;
+      font-size: var(--text-md); font-weight: 500; line-height: 1;
+      border-radius: var(--radius-pill);
+      border: 1px solid transparent; cursor: pointer;
+      transition: background .2s, border-color .2s, color .2s;
+    }
+    .btn-primary { background: var(--foreground); color: var(--background); }
+    .btn-primary:hover:not(:disabled) { background: var(--button-primary-hover); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-secondary { background: var(--background); color: var(--foreground); border-color: var(--gray-200); }
+    .btn-secondary:hover:not(:disabled) { background: var(--button-secondary-hover); }
+    .btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
+    /* 危险操作（清空）：红边描边按钮，--danger 作为语义色 */
+    .btn-danger { background: var(--background); color: var(--danger); border-color: var(--danger); }
+    .btn-danger:hover:not(:disabled) { background: var(--danger-subtle); }
+
+    .result-section { display: none; }
+    .result-section.show { display: block; }
+    .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3); }
+    .result-info { font-size: var(--text-base); color: var(--foreground-secondary); }
+    .result-info strong { color: var(--foreground); }
+    .result-preview {
+      max-height: 400px; overflow: auto;
+      border: 1px solid var(--gray-200); border-radius: var(--radius);
+    }
+    .result-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .result-table th {
+      background: var(--background-muted); padding: 12px; text-align: left;
+      font-weight: 500; color: var(--foreground); position: sticky; top: 0;
+      border-bottom: 1px solid var(--gray-200); white-space: nowrap;
+    }
+    .result-table td {
+      padding: 10px 12px; border-bottom: 1px solid var(--gray-200);
+      color: var(--foreground-secondary);
+    }
+    .result-table tr:nth-child(odd) td { background: var(--background-subtle); }
+    .result-table tr:last-child td { border-bottom: none; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--foreground-tertiary); }
+    .empty-icon { width: 64px; height: 64px; margin: 0 auto var(--space-3); opacity: 0.5; }
+
+    /* Toast：底部居中，前景反色（成功/警告/信息），错误红色 */
+    .toast {
+      position: fixed; bottom: 32px; left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 20px; border-radius: var(--radius);
+      border: 1px solid var(--gray-200);
+      background: var(--foreground); color: var(--background);
+      font-size: var(--text-base); font-weight: 500;
+      z-index: 1200; max-width: 90%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+      animation: toastIn .25s ease;
+    }
+    .toast.success, .toast.warning { background: var(--foreground); color: var(--background); }
+    .toast.error { background: var(--danger); color: #fff; border-color: var(--danger); }
+    @keyframes toastIn {
+      from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+      to   { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+
+    /* 匹配统计：浅灰底 + 细灰边，数值用前景色（非蓝） */
+    .match-stats {
+      display: flex; gap: var(--space-5); margin-bottom: var(--space-3);
+      padding: 12px var(--space-4);
+      background: var(--background-subtle);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+    }
+    .match-stat { display: flex; align-items: center; gap: var(--space-2); }
+    .match-stat-label { font-size: var(--text-sm); color: var(--foreground-secondary); }
+    .match-stat-value { font-size: var(--text-md); font-weight: 600; color: var(--foreground); }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 右上角主题切换按钮 */
+    .theme-toggle {
+      position: fixed; top: 16px; right: 16px; z-index: 1100;
+      width: 40px; height: 40px; border-radius: var(--radius-full);
+      border: 1px solid var(--gray-200); background: var(--background); color: var(--foreground);
+      font-size: 18px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
+  </style>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换深色 / 浅色模式" title="切换主题">
+    <span class="theme-toggle-icon">🌙</span>
+  </button>
+
+  <div id="app">
+    <div class="container">
+      <header class="header">
+        <h1>表格合并工具</h1>
+        <p>上传两张表格，勾选匹配字段，按连接模式合并数据</p>
+      </header>
+
+      <div class="card">
+        <div class="upload-section">
+          <div class="upload-column">
+            <div class="section-title">左侧表格</div>
+            <div class="upload-box" :class="{ 'drag-over': leftDragOver, 'has-file': leftFile }"
+              @click="triggerUpload('left')"
+              @dragover.prevent="leftDragOver = true"
+              @dragleave="leftDragOver = false"
+              @drop.prevent="handleDrop($event, 'left')">
+              <input type="file" ref="leftInput" class="file-input" accept=".xlsx,.xls,.csv" @change="handleFileSelect($event, 'left')">
+              <template v-if="!leftFile">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+                <div class="upload-text">点击或拖拽上传表格</div>
+                <div class="upload-hint">支持 .xlsx, .xls, .csv 格式，最大 100MB</div>
+              </template>
+              <template v-else>
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="file-info">
+                  <span class="file-name">{{ leftFile.name }}</span>
+                  <span class="file-size">({{ formatSize(leftFile.size) }})</span>
+                  <span class="clear-btn" @click.stop="clearFile('left')">清除</span>
+                </div>
+              </template>
+            </div>
+            <div v-if="leftData.length" class="preview-table-container">
+              <table class="preview-table">
+                <thead><tr><th v-for="col in leftHeaders" :key="col">{{ col }}</th></tr></thead>
+                <tbody><tr v-for="(row, idx) in leftPreview" :key="idx"><td v-for="col in leftHeaders" :key="col">{{ row[col] }}</td></tr></tbody>
+              </table>
+            </div>
+            <div v-if="leftData.length" class="row-count">共 {{ leftData.length }} 行数据</div>
+          </div>
+
+          <div class="upload-column">
+            <div class="section-title">右侧表格</div>
+            <div class="upload-box" :class="{ 'drag-over': rightDragOver, 'has-file': rightFile }"
+              @click="triggerUpload('right')"
+              @dragover.prevent="rightDragOver = true"
+              @dragleave="rightDragOver = false"
+              @drop.prevent="handleDrop($event, 'right')">
+              <input type="file" ref="rightInput" class="file-input" accept=".xlsx,.xls,.csv" @change="handleFileSelect($event, 'right')">
+              <template v-if="!rightFile">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+                <div class="upload-text">点击或拖拽上传表格</div>
+                <div class="upload-hint">支持 .xlsx, .xls, .csv 格式，最大 100MB</div>
+              </template>
+              <template v-else>
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="file-info">
+                  <span class="file-name">{{ rightFile.name }}</span>
+                  <span class="file-size">({{ formatSize(rightFile.size) }})</span>
+                  <span class="clear-btn" @click.stop="clearFile('right')">清除</span>
+                </div>
+              </template>
+            </div>
+            <div v-if="rightData.length" class="preview-table-container">
+              <table class="preview-table">
+                <thead><tr><th v-for="col in rightHeaders" :key="col">{{ col }}</th></tr></thead>
+                <tbody><tr v-for="(row, idx) in rightPreview" :key="idx"><td v-for="col in rightHeaders" :key="col">{{ row[col] }}</td></tr></tbody>
+              </table>
+            </div>
+            <div v-if="rightData.length" class="row-count">共 {{ rightData.length }} 行数据</div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="leftData.length && rightData.length" class="card">
+        <div class="section-title">匹配字段选择</div>
+        <div class="merge-options">
+          <div class="merge-mode">
+            <label>合并模式：</label>
+            <select v-model="mergeMode">
+              <option value="full">全连接（保留全部数据）</option>
+              <option value="inner">内连接（只保留匹配数据）</option>
+              <option value="left">左连接（保留左侧全部数据）</option>
+              <option value="right">右连接（保留右侧全部数据）</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-section">
+          <div class="field-box field-column">
+            <div class="field-header">
+              <span class="field-title">左侧字段</span>
+              <div class="field-actions">
+                <button class="field-btn" @click="selectAll('left')">全选</button>
+                <button class="field-btn" @click="selectNone('left')">取消</button>
+              </div>
+            </div>
+            <div class="field-list">
+              <div class="field-item" v-for="field in leftHeaders" :key="field">
+                <input type="checkbox" :id="'left-' + field" :value="field" v-model="selectedLeftFields">
+                <label :for="'left-' + field">{{ field }}</label>
+              </div>
+            </div>
+          </div>
+          <div class="field-box field-column">
+            <div class="field-header">
+              <span class="field-title">右侧字段</span>
+              <div class="field-actions">
+                <button class="field-btn" @click="selectAll('right')">全选</button>
+                <button class="field-btn" @click="selectNone('right')">取消</button>
+              </div>
+            </div>
+            <div class="field-list">
+              <div class="field-item" v-for="field in rightHeaders" :key="field">
+                <input type="checkbox" :id="'right-' + field" :value="field" v-model="selectedRightFields">
+                <label :for="'right-' + field">{{ field }}</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-primary" @click="mergeData" :disabled="isMerging || !selectedLeftFields.length || !selectedRightFields.length">
+            <span v-if="isMerging" class="spinner"></span>
+            <span v-else>开始合并</span>
+          </button>
+          <button class="btn btn-secondary" @click="exportResult" :disabled="!resultData.length">导出结果</button>
+          <button class="btn btn-danger" @click="clearAll">清空数据</button>
+        </div>
+      </div>
+
+      <div v-if="resultData.length" class="card result-section show">
+        <div class="result-header">
+          <div class="section-title">合并结果</div>
+        </div>
+        <div class="match-stats">
+          <div class="match-stat">
+            <span class="match-stat-label">匹配行数：</span>
+            <span class="match-stat-value">{{ matchedCount }}</span>
+          </div>
+          <div class="match-stat">
+            <span class="match-stat-label">总结果行数：</span>
+            <span class="match-stat-value">{{ resultData.length }}</span>
+          </div>
+        </div>
+        <div class="result-preview">
+          <table class="result-table">
+            <thead><tr><th v-for="col in resultHeaders" :key="col">{{ col }}</th></tr></thead>
+            <tbody><tr v-for="(row, idx) in resultPreview" :key="idx"><td v-for="col in resultHeaders" :key="col">{{ row[col] }}</td></tr></tbody>
+          </table>
+        </div>
+        <div class="row-count">显示前 {{ resultPreview.length }} 条，共 {{ resultData.length }} 条结果</div>
+      </div>
+
+      <div v-if="!leftData.length && !rightData.length" class="card">
+        <div class="empty-state">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <div>请上传两张表格文件开始合并</div>
+        </div>
+      </div>
+    </div>
+    <div v-if="toast.show" class="toast" :class="toast.type">{{ toast.message }}</div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed } = Vue;
+    createApp({
+      setup() {
+        const leftInput = ref(null);
+        const rightInput = ref(null);
+        const leftFile = ref(null);
+        const rightFile = ref(null);
+        const leftDragOver = ref(false);
+        const rightDragOver = ref(false);
+        const leftData = ref([]);
+        const rightData = ref([]);
+        const leftHeaders = ref([]);
+        const rightHeaders = ref([]);
+        const selectedLeftFields = ref([]);
+        const selectedRightFields = ref([]);
+        const mergeMode = ref('full');
+        const isMerging = ref(false);
+        const resultData = ref([]);
+        const resultHeaders = ref([]);
+        const matchedCount = ref(0);
+        const toast = ref({ show: false, message: '', type: 'success' });
+        let toastTimer = null;
+
+        const showToast = (message, type = 'success') => {
+          if (toastTimer) clearTimeout(toastTimer);
+          toast.value = { show: true, message, type };
+          toastTimer = setTimeout(() => { toast.value.show = false; }, 3000);
+        };
+
+        const formatSize = (bytes) => {
+          if (bytes < 1024) return bytes + ' B';
+          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        };
+
+        const parseFile = (file) => {
+          return new Promise((resolve, reject) => {
+            if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+              reject(new Error('不支持的文件格式，请上传 xlsx、xls 或 csv 文件'));
+              return;
+            }
+            if (file.size > 100 * 1024 * 1024) {
+              reject(new Error('文件大小超过 100MB 限制'));
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                if (jsonData.length < 2) {
+                  reject(new Error('表格数据为空或格式不正确'));
+                  return;
+                }
+                const headers = jsonData[0].map(h => String(h).trim());
+                const rows = jsonData.slice(1).map(row => {
+                  const obj = {};
+                  headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? String(row[i]).trim() : ''; });
+                  return obj;
+                }).filter(row => Object.values(row).some(v => v));
+                resolve({ headers, data: rows });
+              } catch (err) {
+                reject(new Error('文件解析失败: ' + err.message));
+              }
+            };
+            reader.onerror = () => reject(new Error('文件读取失败'));
+            reader.readAsArrayBuffer(file);
+          });
+        };
+
+        const triggerUpload = (side) => {
+          const input = side === 'left' ? leftInput : rightInput;
+          input.value.click();
+        };
+
+        const handleFileSelect = async (event, side) => {
+          const file = event.target.files[0];
+          if (!file) return;
+          try {
+            const { headers, data } = await parseFile(file);
+            if (side === 'left') {
+              leftFile.value = file;
+              leftData.value = data;
+              leftHeaders.value = headers;
+              selectedLeftFields.value = [...headers];
+            } else {
+              rightFile.value = file;
+              rightData.value = data;
+              rightHeaders.value = headers;
+              selectedRightFields.value = [...headers];
+            }
+            showToast('文件上传成功', 'success');
+          } catch (err) { showToast(err.message, 'error'); }
+          event.target.value = '';
+        };
+
+        const handleDrop = async (event, side) => {
+          const file = event.dataTransfer.files[0];
+          if (!file) return;
+          if (side === 'left') leftDragOver.value = false;
+          else rightDragOver.value = false;
+          try {
+            const { headers, data } = await parseFile(file);
+            if (side === 'left') {
+              leftFile.value = file;
+              leftData.value = data;
+              leftHeaders.value = headers;
+              selectedLeftFields.value = [...headers];
+            } else {
+              rightFile.value = file;
+              rightData.value = data;
+              rightHeaders.value = headers;
+              selectedRightFields.value = [...headers];
+            }
+            showToast('文件上传成功', 'success');
+          } catch (err) { showToast(err.message, 'error'); }
+        };
+
+        const clearFile = (side) => {
+          if (side === 'left') {
+            leftFile.value = null;
+            leftData.value = [];
+            leftHeaders.value = [];
+            selectedLeftFields.value = [];
+          } else {
+            rightFile.value = null;
+            rightData.value = [];
+            rightHeaders.value = [];
+            selectedRightFields.value = [];
+          }
+          resultData.value = [];
+          resultHeaders.value = [];
+        };
+
+        const selectAll = (side) => {
+          if (side === 'left') selectedLeftFields.value = [...leftHeaders.value];
+          else selectedRightFields.value = [...rightHeaders.value];
+        };
+
+        const selectNone = (side) => {
+          if (side === 'left') selectedLeftFields.value = [];
+          else selectedRightFields.value = [];
+        };
+
+        const mergeData = async () => {
+          if (!selectedLeftFields.value.length || !selectedRightFields.value.length) {
+            showToast('请至少选择一个匹配字段', 'warning');
+            return;
+          }
+          isMerging.value = true;
+          await new Promise(resolve => setTimeout(resolve, 100));
+          try {
+            const leftFields = selectedLeftFields.value;
+            const rightFields = selectedRightFields.value;
+            const allLeftFields = leftHeaders.value;
+            const allRightFields = rightHeaders.value;
+
+            const leftMap = new Map();
+            leftData.value.forEach(row => {
+              const key = leftFields.map(f => String(row[f] || '').trim()).join('|||').toLowerCase();
+              if (!leftMap.has(key)) leftMap.set(key, []);
+              leftMap.get(key).push(row);
+            });
+
+            const rightMap = new Map();
+            rightData.value.forEach(row => {
+              const key = rightFields.map(f => String(row[f] || '').trim()).join('|||').toLowerCase();
+              if (!rightMap.has(key)) rightMap.set(key, []);
+              rightMap.get(key).push(row);
+            });
+
+            let results = [];
+            let matchCount = 0;
+            const usedRightKeys = new Set();
+
+            const createMergedRow = (leftRow, rightRow) => {
+              const merged = {};
+              // 先处理左侧字段
+              allLeftFields.forEach(f => { merged[f] = leftRow ? (leftRow[f] ?? '') : ''; });
+              // 再处理右侧字段：如果字段名相同则合并（优先取非空值），不同则新增
+              allRightFields.forEach(f => {
+                if (allLeftFields.includes(f)) {
+                  // 同名字段：优先取右侧值，如果右侧为空则保留左侧值
+                  merged[f] = rightRow && rightRow[f] ? rightRow[f] : (leftRow ? (leftRow[f] ?? '') : '');
+                } else {
+                  merged[f] = rightRow ? (rightRow[f] ?? '') : '';
+                }
+              });
+              return merged;
+            };
+
+            if (mergeMode.value === 'inner' || mergeMode.value === 'left') {
+              leftData.value.forEach(leftRow => {
+                const leftKey = leftFields.map(f => String(leftRow[f] ?? '').trim()).join('|||').toLowerCase();
+                if (!leftKey || leftKey === '') return;
+                const rightMatches = rightMap.get(leftKey) || [];
+                if (rightMatches.length > 0) {
+                  matchCount++;
+                  usedRightKeys.add(leftKey);
+                  rightMatches.forEach(rightRow => { results.push(createMergedRow(leftRow, rightRow)); });
+                } else if (mergeMode.value === 'left') {
+                  results.push(createMergedRow(leftRow, null));
+                }
+              });
+            }
+
+            if (mergeMode.value === 'right') {
+              rightData.value.forEach(rightRow => {
+                const rightKey = rightFields.map(f => String(rightRow[f] ?? '').trim()).join('|||').toLowerCase();
+                if (!rightKey || rightKey === '') return;
+                if (!usedRightKeys.has(rightKey)) { results.push(createMergedRow(null, rightRow)); }
+              });
+            }
+
+            if (mergeMode.value === 'full') {
+              const usedLeftKeys = new Set();
+              leftData.value.forEach(leftRow => {
+                const leftKey = leftFields.map(f => String(leftRow[f] ?? '').trim()).join('|||').toLowerCase();
+                if (leftKey && leftKey !== '') usedLeftKeys.add(leftKey);
+              });
+              // 处理左侧数据
+              leftData.value.forEach(leftRow => {
+                const leftKey = leftFields.map(f => String(leftRow[f] ?? '').trim()).join('|||').toLowerCase();
+                if (!leftKey || leftKey === '') { results.push(createMergedRow(leftRow, null)); return; }
+                const rightMatches = rightMap.get(leftKey) || [];
+                if (rightMatches.length > 0) {
+                  matchCount++;
+                  rightMatches.forEach(rightRow => { results.push(createMergedRow(leftRow, rightRow)); });
+                } else { results.push(createMergedRow(leftRow, null)); }
+              });
+              // 处理右侧独有的数据
+              rightData.value.forEach(rightRow => {
+                const rightKey = rightFields.map(f => String(rightRow[f] ?? '').trim()).join('|||').toLowerCase();
+                if (!rightKey || rightKey === '') return;
+                if (!usedLeftKeys.has(rightKey)) { results.push(createMergedRow(null, rightRow)); }
+              });
+            }
+
+            // 不带前缀的表头，先左侧后右侧
+            const headerSet = new Set([...allLeftFields, ...allRightFields]);
+            resultHeaders.value = Array.from(headerSet);
+            resultData.value = results;
+            matchedCount.value = matchCount;
+            showToast(`合并完成，共 ${results.length} 条结果`, 'success');
+          } catch (err) { showToast('合并失败: ' + err.message, 'error'); }
+          finally { isMerging.value = false; }
+        };
+
+        const exportResult = () => {
+          if (!resultData.value.length) return;
+          try {
+            const aoa = [];
+            aoa.push(resultHeaders.value);
+            resultData.value.forEach(row => { aoa.push(resultHeaders.value.map(h => row[h] || '')); });
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '合并结果');
+            const fileName = `合并结果_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            showToast('导出成功', 'success');
+          } catch (err) { showToast('导出失败: ' + err.message, 'error'); }
+        };
+
+        const clearAll = () => {
+          leftFile.value = null; rightFile.value = null;
+          leftData.value = []; rightData.value = [];
+          leftHeaders.value = []; rightHeaders.value = [];
+          selectedLeftFields.value = []; selectedRightFields.value = [];
+          resultData.value = []; resultHeaders.value = [];
+          matchedCount.value = 0;
+        };
+
+        const leftPreview = computed(() => leftData.value.slice(0, 100));
+        const rightPreview = computed(() => rightData.value.slice(0, 100));
+        const resultPreview = computed(() => resultData.value.slice(0, 100));
+
+        return {
+          leftInput, rightInput, leftFile, rightFile, leftDragOver, rightDragOver,
+          leftData, rightData, leftHeaders, rightHeaders,
+          selectedLeftFields, selectedRightFields, mergeMode, isMerging,
+          resultData, resultHeaders, matchedCount, toast,
+          leftPreview, rightPreview, resultPreview,
+          formatSize, triggerUpload, handleFileSelect, handleDrop,
+          clearFile, selectAll, selectNone, mergeData, exportResult, clearAll
+        };
+      }
+    }).mount('#app');
+  </script>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('themeToggle');
+      if (!btn) return;
+      function syncIcon() {
+        var isDark = document.documentElement.classList.contains('dark');
+        btn.querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+        btn.title = isDark ? '切换到浅色' : '切换到深色';
+      }
+      function applyTheme(t) {
+        if (t === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+        try { localStorage.setItem('theme', t); } catch (e) {}
+        syncIcon();
+        if (typeof window.__onThemeChange === 'function') window.__onThemeChange(t);
+      }
+      btn.addEventListener('click', function () {
+        applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      });
+      syncIcon();
+    })();
+  </script>
+</body>
+</html>

@@ -213,16 +213,25 @@
 
         .empty-hint { color: var(--foreground-tertiary); text-align: center; padding: 60px 20px; font-size: 14px; }
 
+        /* Toast：使用前景色反色（浅色模式黑底白字 / 暗色模式白底黑字），
+           对齐 Next.js / Geist UI 克制用色——蓝仅用于链接，提示态用前景反色 */
         .toast {
-            position: fixed; bottom: 30px; left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #333; color: white; padding: 14px 28px; border-radius: var(--radius);
-            font-weight: 500; z-index: 1000; opacity: 0; transition: all 0.3s; max-width: 90%;
+            position: fixed; bottom: 32px; left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            opacity: 0; pointer-events: none;
+            padding: 12px 20px; border-radius: var(--radius);
+            border: 1px solid var(--gray-200);
+            background: var(--foreground); color: var(--background);
+            font-size: var(--text-base); font-weight: 500;
+            z-index: 1200; max-width: 90%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+            transition: transform .25s, opacity .25s;
         }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast.success { background: var(--accent); color: #fff; }
-        .toast.error { background: var(--danger); color: #fff; }
-        .toast.info { background: var(--accent); color: #fff; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+        /* 成功 / 信息态：前景反色（与主按钮一致），不出现蓝 */
+        .toast.success, .toast.info { background: var(--foreground); color: var(--background); }
+        /* 错误态：保留 --danger 红色作为唯一语义色 */
+        .toast.error { background: var(--danger); color: #fff; border-color: var(--danger); }
 
         .loading-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.45);

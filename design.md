@@ -46,7 +46,7 @@
   /* 语义色（谨慎使用） */
   --danger: #d00;
   --danger-subtle: #ffe0e0;
-  /* 成功 / 信息态一律复用 --accent（蓝），不另设绿或专用 success 变量 */
+  /* Toast 成功 / 信息态一律用前景反色（--foreground / --background），不另设绿或专用 success 变量 */
 
   /* 按钮 hover（中性灰，非蓝） */
   --button-primary-hover: #383838;     /* 亮色：略浅的黑 */
@@ -77,7 +77,7 @@
 
 > **关键约定**：暗色由 `<html class="dark">` 决定，不再依赖 `@media (prefers-color-scheme: dark)` 直接改 token（避免与手动切换冲突）。是否加 `.dark` 由第 9 节的切换脚本统一裁决：默认跟随系统，用户手动选择后持久化。
 
-> **配色纪律**：`--accent` 蓝只出现在 `<a>` 链接、Logo、输入聚焦环（`box-shadow`）、以及状态/Toast 等语义场景。**任何按钮（`.btn-*`、`.file-label`、`.theme-toggle`、卡片操作按钮）一律不得用蓝**——主按钮用前景黑，描边/幽灵按钮用 `--gray-200` 灰边。
+> **配色纪律**：`--accent` 蓝只出现在 `<a>` 链接、Logo、输入聚焦环（`box-shadow`）、以及状态条（`.status-valid`）等语义场景。**Toast 不使用蓝色**——成功 / 信息态用前景反色（与主按钮一致），错误态用 `--danger` 红。**任何按钮（`.btn-*`、`.file-label`、`.theme-toggle`、卡片操作按钮）一律不得用蓝**——主按钮用前景黑，描边/幽灵按钮用 `--gray-200` 灰边。
 
 ---
 
@@ -236,7 +236,7 @@ a:hover { text-decoration: underline; }
 
 ### 6.5 提示 Toast（可选，json-formatter / html-to-pdf 已用）
 
-固定底部居中浮现，自动消失。成功 / 信息复用蓝（`--accent`），错误用 `--danger`。
+固定底部居中浮现，自动消失。**成功 / 信息用前景反色（黑底白字 / 白底黑字），错误用 `--danger`**——蓝色只用于链接 / 品牌，不用于提示状态（与第 2 节"克制用色"一致）。
 
 ```css
 .toast {
@@ -244,17 +244,21 @@ a:hover { text-decoration: underline; }
   transform: translateX(-50%) translateY(20px);   /* 初始下沉 + 透明 */
   opacity: 0; pointer-events: none;
   padding: 12px 20px; border-radius: var(--radius);
-  font-size: var(--text-base); font-weight: 500; color: #fff;
+  border: 1px solid var(--gray-200);
+  background: var(--foreground); color: var(--background);  /* 前景反色 */
+  font-size: var(--text-base); font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
   transition: transform .25s, opacity .25s;
 }
-.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-.toast.success { background: var(--accent); }   /* 蓝 */
-.toast.info    { background: var(--accent); }   /* 蓝 */
-.toast.error   { background: var(--danger); }   /* 红 */
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+.toast.success, .toast.info { background: var(--foreground); color: var(--background); }  /* 前景反色，非蓝 */
+.toast.error   { background: var(--danger); color: #fff; border-color: var(--danger); }   /* 红色（唯一语义色） */
 ```
 
 - 调用：`showToast('PDF 已生成', 'success')` → 加 `.show`，约 2s 后移除。
-- 文字恒为白（`#fff`），与彩色底对比满足可读性。
+- 浅色模式 toast 为黑底白字、暗色模式自动反转为白底黑字（依赖 CSS 变量，无需写分支），与主按钮视觉一致。
+- 错误态是唯一使用彩色的场景（红色 `--danger`），符合「语义色谨慎使用」的原则。
+- Toast 为浮层场景，允许使用轻微阴影增强层级感（不违反第 5 节"边框优于阴影"，那条主要针对卡片）。
 
 ### 6.6 空状态 Empty State
 - 居中、灰色图标 + `--foreground-tertiary` 文案，无边框卡片内呈现。
