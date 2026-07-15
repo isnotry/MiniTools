@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
+    <title>HTML 转 PDF 工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --background: #ffffff;
+            --background-subtle: #fafafa;
+            --background-muted: #f5f5f5;
+            --foreground: #171717;
+            --foreground-secondary: #666666;
+            --foreground-tertiary: #999999;
+            --gray-200: #eaeaea;
+            --gray-300: #d4d4d4;
+            --gray-700: #333333;
+            --accent: #0070f3;
+            --accent-hover: #0061d5;
+            --accent-subtle: #f0f7ff;
+            --danger: #d00;
+            --danger-subtle: #ffe0e0;
+            --font-sans: "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            --font-mono: "Geist Mono", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+            --text-xs: 12px; --text-sm: 13px; --text-base: 14px;
+            --text-md: 16px; --text-lg: 20px; --text-xl: 28px;
+            --radius: 8px;
+            --radius-sm: 6px;
+            --radius-pill: 128px;
+            --radius-full: 9999px;
+            --button-primary-hover: #383838;
+            --button-secondary-hover: #f2f2f2;
+            --space-2: 8px;
+            --space-3: 16px;
+            --space-4: 24px;
+            --space-5: 32px;
+        }
+
+        :root.dark {
+            --background: #0a0a0a;
+            --background-subtle: #111111;
+            --background-muted: #1a1a1a;
+            --foreground: #ededed;
+            --foreground-secondary: #a0a0a0;
+            --foreground-tertiary: #666666;
+            --gray-200: #333333;
+            --gray-300: #444444;
+            --gray-700: #cccccc;
+            --accent: #0070f3;
+            --accent-hover: #3291ff;
+            --accent-subtle: #0a2540;
+            --danger: #ff6b6b;
+            --danger-subtle: #3a1d1d;
+            --button-primary-hover: #ccc;
+            --button-secondary-hover: #1a1a1a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            color: var(--foreground);
+            background: var(--background-subtle);
+            min-height: 100vh;
+            padding: var(--space-4);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        .header { text-align: center; color: var(--foreground); margin-bottom: var(--space-5); }
+        .header h1 { font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.02em; margin-bottom: var(--space-2); }
+        .header p { opacity: 1; color: var(--foreground-secondary); font-size: var(--text-base); }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-4);
+            align-items: start;
+        }
+        @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--background);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: var(--space-4);
+        }
+        .card h2 { color: var(--foreground); margin-bottom: var(--space-3); font-size: var(--text-md); font-weight: 600; letter-spacing: -0.01em; }
+
+        .input-group { margin-bottom: var(--space-3); }
+        .input-group label {
+            display: block; color: var(--foreground-secondary); margin-bottom: var(--space-2); font-weight: 500; font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 260px;
+            padding: 12px 14px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: var(--font-mono);
+            line-height: 1.5;
+            resize: vertical;
+            color: var(--foreground);
+            background: var(--background);
+            transition: border-color .2s, box-shadow .2s;
+            tab-size: 2;
+        }
+        textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+        textarea::placeholder { color: var(--foreground-tertiary); }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-3);
+            margin: var(--space-3) 0;
+        }
+        .options .full { grid-column: 1 / -1; }
+
+        select, input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: var(--font-sans);
+            color: var(--foreground);
+            background: var(--background);
+            transition: border-color .2s, box-shadow .2s;
+        }
+        select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            height: 48px;
+            padding: 0 20px;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1;
+            border-radius: var(--radius-pill);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background .2s, border-color .2s, color .2s;
+        }
+        .btn-primary { background: var(--foreground); color: var(--background); }
+        .btn-primary:hover { background: var(--button-primary-hover); }
+        .btn-secondary { background: var(--background); color: var(--foreground); border-color: var(--gray-200); }
+        .btn-secondary:hover { background: var(--button-secondary-hover); }
+        .btn-ghost { background: var(--background); color: var(--foreground-secondary); border-color: var(--gray-200); }
+        .btn-ghost:hover { background: var(--button-secondary-hover); }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+        .file-label {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 10px 18px; border: 1px dashed var(--gray-300); border-radius: var(--radius);
+            color: var(--foreground-secondary); font-weight: 600; font-size: 14px; cursor: pointer; transition: background .2s;
+        }
+        .file-label:hover { background: var(--background-subtle); }
+        input[type="file"] { display: none; }
+
+        .checkbox-wrapper { display: flex; align-items: center; gap: 9px; margin-top: var(--space-2); }
+        .checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+        .checkbox-wrapper label { cursor: pointer; color: var(--foreground-secondary); font-size: 14px; }
+
+        .help-text { font-size: 13px; color: var(--foreground-tertiary); margin-top: 6px; line-height: 1.5; }
+
+        /* 预览区：模拟纸张置于桌面 */
+        .preview-wrap {
+            background: var(--background-muted);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 18px;
+            min-height: 420px;
+            max-height: 70vh;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+        }
+        .page {
+            /* 纸张本身始终为白底（PDF 内容即白底），故此处不随主题变量变化 */
+            background: #ffffff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            min-height: 100px;
+        }
+        #pdfContent {
+            padding: 24px;
+            box-sizing: border-box;
+            color: #222222; /* 纸张正文色，固定深灰 */
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        #pdfContent h1, #pdfContent h2, #pdfContent h3 { margin: 0.6em 0 0.3em; line-height: 1.3; color: #111; }
+        #pdfContent p { margin: 0.5em 0; }
+        #pdfContent table { border-collapse: collapse; width: 100%; margin: 0.6em 0; }
+        #pdfContent th, #pdfContent td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; }
+        #pdfContent img { max-width: 100%; height: auto; }
+        #pdfContent pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow: auto; }
+        #pdfContent code { font-family: var(--font-mono); background: #f0f0f0; padding: 1px 5px; border-radius: 4px; }
+
+        .empty-hint { color: var(--foreground-tertiary); text-align: center; padding: 60px 20px; font-size: 14px; }
+
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333; color: white; padding: 14px 28px; border-radius: var(--radius);
+            font-weight: 500; z-index: 1000; opacity: 0; transition: all 0.3s; max-width: 90%;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: var(--accent); color: #fff; }
+        .toast.error { background: var(--danger); color: #fff; }
+        .toast.info { background: var(--accent); color: #fff; }
+
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            display: none; align-items: center; justify-content: center;
+            z-index: 2000; flex-direction: column; gap: 16px; color: white;
+        }
+        .loading-overlay.show { display: flex; }
+        .spinner {
+            width: 46px; height: 46px; border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: #fff; border-radius: 50%; animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 右上角主题切换按钮（固定右上角） */
+        .theme-toggle {
+            position: fixed; top: 16px; right: 16px; z-index: 1100;
+            width: 40px; height: 40px; border-radius: var(--radius-full);
+            border: 1px solid var(--gray-200); background: var(--background); color: var(--foreground);
+            font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+            transition: background .2s, border-color .2s, transform .2s;
+        }
+        .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
+    </style>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t !== 'light' && t !== 'dark') {
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          if (t === 'dark') document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换深色 / 浅色模式" title="切换主题">
+            <span class="theme-toggle-icon">🌙</span>
+        </button>
+
+        <div class="header">
+            <h1>📄 HTML 转 PDF 工具</h1>
+            <p>粘贴 HTML 代码，实时预览，一键导出 PDF</p>
+        </div>
+
+        <div class="layout">
+            <!-- 左侧：输入与选项 -->
+            <div class="card">
+                <h2>① 输入 HTML</h2>
+
+                <div class="input-group">
+                    <label for="htmlInput">HTML 源码（支持内联或 &lt;style&gt; 样式）</label>
+                    <textarea id="htmlInput" placeholder="在此粘贴 HTML 代码，例如：&#10;&#10;<h1>标题</h1>&#10;<p>这是一段正文。</p>" spellcheck="false"></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <label class="file-label" for="fileInput">📂 载入 HTML 文件</label>
+                    <input type="file" id="fileInput" accept=".html,.htm,text/html">
+                    <button class="btn btn-ghost" onclick="loadSample()">✨ 示例</button>
+                    <button class="btn btn-ghost" onclick="clearAll()">🗑️ 清空</button>
+                </div>
+
+                <h2 style="margin-top:22px;">② 页面设置</h2>
+                <div class="options">
+                    <div class="input-group">
+                        <label>页面尺寸</label>
+                        <select id="pageSize">
+                            <option value="a4" selected>A4 (210×297mm)</option>
+                            <option value="a3">A3 (297×420mm)</option>
+                            <option value="a5">A5 (148×210mm)</option>
+                            <option value="letter">Letter (8.5×11in)</option>
+                            <option value="legal">Legal (8.5×14in)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>方向</label>
+                        <select id="orientation">
+                            <option value="portrait" selected>纵向</option>
+                            <option value="landscape">横向</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>边距 (mm)</label>
+                        <input type="number" id="margin" value="10" min="0" max="50" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label>清晰度 (scale 1-4)</label>
+                        <input type="number" id="scale" value="2" min="1" max="4" step="0.5">
+                    </div>
+                    <div class="input-group full">
+                        <label>文件名</label>
+                        <input type="text" id="filename" value="document" placeholder="导出的 PDF 文件名（不含扩展名）">
+                    </div>
+                </div>
+
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="autoPreview" checked>
+                    <label for="autoPreview">编辑时自动预览（输入停止 0.6s 后）</label>
+                </div>
+
+                <div class="btn-group" style="margin-top:16px;">
+                    <button class="btn btn-secondary" onclick="renderPreview()">👁️ 预览</button>
+                    <button class="btn btn-primary" id="convertBtn" onclick="convertToPDF()">📥 转换为 PDF</button>
+                </div>
+
+                <div class="help-text">
+                    提示：导出基于 html2canvas 渲染，PDF 中的文字为图像（不可选中 / 搜索），适合版式截图式导出。如需可选中文字的矢量 PDF，可改用浏览器「打印 → 另存为 PDF」。
+                </div>
+            </div>
+
+            <!-- 右侧：预览 -->
+            <div class="card">
+                <h2>③ 预览</h2>
+                <div class="preview-wrap">
+                    <div class="page" id="previewPage">
+                        <div id="pdfContent">
+                            <div class="empty-hint">在左侧输入 HTML 后点击「预览」</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div>正在生成 PDF，请稍候…</div>
+    </div>
+
+    <script>
+        // 页面尺寸（毫米）
+        const PAGE_SIZES = {
+            a4:    [210, 297],
+            a3:    [297, 420],
+            a5:    [148, 210],
+            letter:[215.9, 279.4],
+            legal: [215.9, 355.6]
+        };
+
+        const MM_TO_PX = 96 / 25.4; // 1mm ≈ 3.7795px @96dpi
+        const DEFAULT_SAMPLE = `<div style="font-family: -apple-system, 'Segoe UI', sans-serif; color:#1a1a2e;">
+  <h1 style="color:#0070f3; border-bottom:3px solid #0070f3; padding-bottom:8px;">季度汇报</h1>
+  <p>本工具可将任意 <strong>HTML</strong> 片段一键导出为 PDF，支持自定义页面与边距。</p>
+  <h2>关键指标</h2>
+  <table style="border-collapse:collapse; width:100%;">
+    <thead>
+      <tr style="background:#0070f3; color:#fff;">
+        <th style="border:1px solid #ccc; padding:8px;">指标</th>
+        <th style="border:1px solid #ccc; padding:8px;">数值</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="border:1px solid #ccc; padding:8px;">访问量</td><td style="border:1px solid #ccc; padding:8px;">12,480</td></tr>
+      <tr><td style="border:1px solid #ccc; padding:8px;">转化率</td><td style="border:1px solid #ccc; padding:8px;">3.7%</td></tr>
+    </tbody>
+  </table>
+  <h2>要点</h2>
+  <ul>
+    <li>支持内联样式与 &lt;style&gt; 标签</li>
+    <li>支持表格、图片、列表等常见元素</li>
+    <li>自动按内容高度分页</li>
+  </ul>
+</div>`;
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => { toast.className = 'toast'; }, 3200);
+        }
+
+        // 去除 <script> 标签（不影响版式，仅防止脚本执行）
+        function sanitize(html) {
+            return html.replace(/<script[\s\S]*?<\/script>/gi, '');
+        }
+
+        // 根据页面尺寸 + 方向计算预览容器宽度（像素），使预览与输出一致
+        function updatePageWidth() {
+            const [w, h] = PAGE_SIZES[document.getElementById('pageSize').value] || PAGE_SIZES.a4;
+            const landscape = document.getElementById('orientation').value === 'landscape';
+            const pageWmm = landscape ? Math.max(w, h) : Math.min(w, h);
+            const px = Math.round(pageWmm * MM_TO_PX);
+            document.getElementById('previewPage').style.width = px + 'px';
+        }
+
+        function renderPreview() {
+            const raw = document.getElementById('htmlInput').value;
+            const content = document.getElementById('pdfContent');
+            if (!raw.trim()) {
+                content.innerHTML = '<div class="empty-hint">在左侧输入 HTML 后点击「预览」</div>';
+                return;
+            }
+            content.innerHTML = sanitize(raw);
+            showToast('预览已更新', 'success');
+        }
+
+        function loadSample() {
+            document.getElementById('htmlInput').value = DEFAULT_SAMPLE;
+            renderPreview();
+        }
+
+        function clearAll() {
+            document.getElementById('htmlInput').value = '';
+            document.getElementById('filename').value = 'document';
+            renderPreview();
+            showToast('已清空');
+        }
+
+        // 文件载入
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                document.getElementById('htmlInput').value = ev.target.result;
+                renderPreview();
+                showToast('已载入：' + file.name, 'success');
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+
+        // 选项变化时同步预览宽度
+        ['pageSize', 'orientation'].forEach(id => {
+            document.getElementById(id).addEventListener('change', updatePageWidth);
+        });
+
+        // 自动预览（防抖）
+        let previewTimer = null;
+        document.getElementById('htmlInput').addEventListener('input', function () {
+            if (!document.getElementById('autoPreview').checked) return;
+            clearTimeout(previewTimer);
+            previewTimer = setTimeout(renderPreview, 600);
+        });
+
+        async function convertToPDF() {
+            const content = document.getElementById('pdfContent');
+            const source = document.getElementById('htmlInput').value.trim();
+            if (!source) {
+                showToast('请先输入 HTML 内容', 'error');
+                return;
+            }
+            // 确保预览是最新内容
+            if (content.querySelector('.empty-hint')) renderPreview();
+
+            const btn = document.getElementById('convertBtn');
+            const overlay = document.getElementById('loadingOverlay');
+            btn.disabled = true;
+            overlay.classList.add('show');
+
+            try {
+                const [w, h] = PAGE_SIZES[document.getElementById('pageSize').value] || PAGE_SIZES.a4;
+                const landscape = document.getElementById('orientation').value === 'landscape';
+                const margin = parseFloat(document.getElementById('margin').value) || 0;
+                const scale = parseFloat(document.getElementById('scale').value) || 2;
+                const rawName = (document.getElementById('filename').value.trim() || 'document');
+                const filename = rawName.replace(/[\\/:*?"<>|]/g, '_') + '.pdf';
+
+                const opt = {
+                    margin: [margin, margin, margin, margin],
+                    filename: filename,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: scale,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    },
+                    jsPDF: {
+                        unit: 'mm',
+                        format: [w, h],
+                        orientation: landscape ? 'landscape' : 'portrait'
+                    },
+                    pagebreak: { mode: ['css', 'legacy'] }
+                };
+
+                await html2pdf().set(opt).from(content).save();
+                showToast('PDF 已生成：' + filename, 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('生成失败：' + (err.message || err), 'error');
+            } finally {
+                btn.disabled = false;
+                overlay.classList.remove('show');
+            }
+        }
+
+        // 初始化
+        updatePageWidth();
+        loadSample();
+    </script>
+
+    <script>
+      (function () {
+        var btn = document.getElementById('themeToggle');
+        if (!btn) return;
+        function syncIcon() {
+          var isDark = document.documentElement.classList.contains('dark');
+          btn.querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+          btn.title = isDark ? '切换到浅色' : '切换到深色';
+        }
+        function applyTheme(t) {
+          if (t === 'dark') document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+          try { localStorage.setItem('theme', t); } catch (e) {}
+          syncIcon();
+          if (typeof window.__onThemeChange === 'function') window.__onThemeChange(t);
+        }
+        btn.addEventListener('click', function () {
+          applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+        });
+        syncIcon();
+      })();
+    </script>
+</body>
+</html>

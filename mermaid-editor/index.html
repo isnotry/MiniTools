@@ -3,9 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
     <title>Mermaid 编辑器</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
+        :root {
+            --background: #ffffff;
+            --background-subtle: #fafafa;
+            --background-muted: #f5f5f5;
+            --foreground: #171717;
+            --foreground-secondary: #666666;
+            --foreground-tertiary: #999999;
+            --gray-200: #eaeaea;
+            --gray-300: #d4d4d4;
+            --gray-700: #333333;
+            --accent: #0070f3;
+            --accent-hover: #0061d5;
+            --accent-subtle: #f0f7ff;
+            --danger: #d00;
+            --font-sans: "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            --font-mono: "Geist Mono", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+            --text-xs: 12px; --text-sm: 13px; --text-base: 14px;
+            --text-md: 16px; --text-lg: 20px; --text-xl: 28px;
+            --radius: 8px;
+            --radius-sm: 6px;
+            --radius-pill: 128px;
+            --button-primary-hover: #383838;
+            --button-secondary-hover: #f2f2f2;
+            --space-2: 8px;
+            --space-3: 16px;
+            --space-4: 24px;
+        }
+
+        /* 暗色模式 token：由 <html class="dark"> 驱动，JS 根据系统偏好或手动切换设置 */
+        :root.dark {
+            --background: #0a0a0a;
+            --background-subtle: #111111;
+            --background-muted: #1a1a1a;
+            --foreground: #ededed;
+            --foreground-secondary: #a0a0a0;
+            --foreground-tertiary: #666666;
+            --gray-200: #333333;
+            --gray-300: #444444;
+            --gray-700: #cccccc;
+            --accent: #0070f3;
+            --accent-hover: #3291ff;
+            --accent-subtle: #0a2540;
+            --danger: #ff6b6b;
+            --danger-subtle: #3a1d1d;
+            --button-primary-hover: #ccc;
+            --button-secondary-hover: #1a1a1a;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,25 +65,31 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: var(--font-sans);
+            color: var(--foreground);
+            background: var(--background);
             height: 100vh;
             display: flex;
             flex-direction: column;
-            background: #f5f5f5;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .header {
-            background: #2d3436;
-            color: white;
-            padding: 16px 24px;
+            background: var(--background);
+            color: var(--foreground);
+            padding: var(--space-3) var(--space-4);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid var(--gray-200);
         }
 
         .header h1 {
-            font-size: 20px;
-            font-weight: 500;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
         }
 
         .main {
@@ -44,33 +102,35 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            border-left: 1px solid #ddd;
+            border-left: 1px solid var(--gray-200);
         }
 
         .panel-header {
-            background: #fff;
-            padding: 12px 16px;
-            border-bottom: 1px solid #ddd;
-            font-weight: 500;
-            color: #2d3436;
+            background: var(--background);
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--gray-200);
+            font-weight: 600;
+            color: var(--foreground);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 14px;
         }
 
         .save-btn {
-            padding: 6px 12px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            padding: 8px 16px;
+            background: var(--foreground);
+            color: var(--background);
+            border: 1px solid transparent;
+            border-radius: var(--radius-pill);
             cursor: pointer;
-            font-size: 13px;
-            transition: background 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background .2s;
         }
 
         .save-btn:hover {
-            background: #219150;
+            background: var(--button-primary-hover);
         }
 
         .editor-container {
@@ -82,13 +142,13 @@
             width: 100%;
             height: 100%;
             border: none;
-            padding: 16px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            padding: var(--space-4);
+            font-family: var(--font-mono);
             font-size: 14px;
             line-height: 1.6;
             resize: none;
-            background: #2d3436;
-            color: #dfe6e9;
+            background: var(--background-muted);
+            color: var(--foreground);
             outline: none;
         }
 
@@ -100,8 +160,8 @@
 
         .preview-container {
             flex: 1;
-            background: #fff;
-            padding: 24px;
+            background: var(--background);
+            padding: var(--space-4);
             overflow: auto;
             display: flex;
             justify-content: center;
@@ -110,8 +170,8 @@
 
         .mermaid-wrapper {
             cursor: zoom-in;
-            transition: transform 0.2s;
-            padding: 20px;
+            transition: transform .2s;
+            padding: var(--space-3);
         }
 
         .mermaid-wrapper:hover {
@@ -169,7 +229,7 @@
             align-items: center;
             justify-content: center;
             z-index: 1001;
-            transition: all 0.2s;
+            transition: all .2s;
         }
 
         .modal-close:hover {
@@ -192,24 +252,60 @@
 
         .error-message {
             display: none;
-            background: #ffe6e6;
-            border: 1px solid #ff9999;
-            color: #cc0000;
-            padding: 12px 16px;
-            margin: 16px 24px;
-            border-radius: 4px;
+            background: var(--danger-subtle);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 12px var(--space-4);
+            margin: var(--space-3) var(--space-4);
+            border-radius: var(--radius);
             font-size: 14px;
         }
 
         .error-message.show {
             display: block;
         }
+
+        /* 右上角主题切换按钮（全屏应用放入顶栏右侧，使用 inline 静态定位） */
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1100;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--gray-200);
+            background: var(--background);
+            color: var(--foreground);
+            font-size: 18px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .2s, border-color .2s, transform .2s;
+        }
+        .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
+        .theme-toggle.inline { position: static; width: 36px; height: 36px; }
     </style>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t !== 'light' && t !== 'dark') {
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          if (t === 'dark') document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
 </head>
 <body>
-    <div class="header">
-        <h1>Mermaid 编辑器</h1>
-    </div>
+        <div class="header">
+            <h1>Mermaid 编辑器</h1>
+            <button class="theme-toggle inline" id="themeToggle" type="button" aria-label="切换深色 / 浅色模式" title="切换主题">
+                <span class="theme-toggle-icon">🌙</span>
+            </button>
+        </div>
 
     <div class="main">
         <div class="preview-panel">
@@ -245,12 +341,20 @@ graph TD
     </div>
 
     <script>
-        // 初始化 Mermaid
+        // 初始化 Mermaid（依据当前主题选择 default / dark）
+        var isDark = document.documentElement.classList.contains('dark');
         mermaid.initialize({
             startOnLoad: false,
-            theme: 'default',
+            theme: isDark ? 'dark' : 'default',
             securityLevel: 'loose',
         });
+
+        // 主题切换时同步 Mermaid 主题并重渲染（由切换脚本调用）
+        window.__onThemeChange = function (theme) {
+            var dark = theme === 'dark';
+            mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default', securityLevel: 'loose' });
+            renderMermaid();
+        };
 
         const codeEditor = document.getElementById('code-editor');
         const mermaidPreview = document.getElementById('mermaid-preview');
@@ -295,7 +399,7 @@ graph TD
             } catch (error) {
                 errorMessage.textContent = '渲染错误: ' + error.message;
                 errorMessage.classList.add('show');
-                mermaidPreview.innerHTML = '<p style="color: #cc0000;">图表渲染失败</p>';
+                mermaidPreview.innerHTML = '<p style="color: #d00;">图表渲染失败</p>';
             }
         }
 
@@ -323,7 +427,7 @@ graph TD
             e.preventDefault();
             const delta = e.deltaY > 0 ? 0.9 : 1.1;
             const newScale = scale * delta;
-            
+
             // 限制缩放范围
             if (newScale >= 0.1 && newScale <= 10) {
                 scale = newScale;
@@ -382,16 +486,16 @@ graph TD
             try {
                 // 获取 SVG 内容
                 const svgData = new XMLSerializer().serializeToString(svg);
-                
+
                 // 创建 canvas
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                
+
                 // 获取实际显示的尺寸
                 const svgClone = svg.cloneNode(true);
                 const bbox = svg.getBoundingClientRect();
                 const viewBox = svg.getAttribute('viewBox');
-                
+
                 let width, height;
                 if (viewBox) {
                     const parts = viewBox.split(/\s+/);
@@ -410,14 +514,14 @@ graph TD
 
                 canvas.width = width;
                 canvas.height = height;
-                
+
                 // 设置 SVG 属性
                 svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
                 svgClone.setAttribute('width', width);
                 svgClone.setAttribute('height', height);
-                
+
                 const svgString = new XMLSerializer().serializeToString(svgClone);
-                
+
                 // 使用 Data URL 而不是 Blob URL
                 const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
 
@@ -463,9 +567,32 @@ graph TD
     D --> F[保存结果]
     F --> G[完成]
     G --> H[结束]`;
-        
+
         // 页面加载后自动渲染
         window.addEventListener('load', renderMermaid);
+    </script>
+
+    <script>
+      (function () {
+        var btn = document.getElementById('themeToggle');
+        if (!btn) return;
+        function syncIcon() {
+          var isDark = document.documentElement.classList.contains('dark');
+          btn.querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+          btn.title = isDark ? '切换到浅色' : '切换到深色';
+        }
+        function applyTheme(t) {
+          if (t === 'dark') document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+          try { localStorage.setItem('theme', t); } catch (e) {}
+          syncIcon();
+          if (typeof window.__onThemeChange === 'function') window.__onThemeChange(t);
+        }
+        btn.addEventListener('click', function () {
+          applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+        });
+        syncIcon();
+      })();
     </script>
 </body>
 </html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniTools · 小工具导航</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --background: #ffffff;
+      --background-subtle: #fafafa;
+      --background-muted: #f5f5f5;
+      --foreground: #171717;
+      --foreground-secondary: #666666;
+      --foreground-tertiary: #999999;
+      --gray-200: #eaeaea;
+      --gray-300: #d4d4d4;
+      --gray-700: #333333;
+      --accent: #0070f3;
+      --accent-hover: #0061d5;
+      --accent-subtle: #f0f7ff;
+      --danger: #d00;
+      --danger-subtle: #ffe0e0;
+      --button-primary-hover: #383838;
+      --button-secondary-hover: #f2f2f2;
+
+      --font-sans: "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: "Geist Mono", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+
+      --text-xs: 12px;
+      --text-sm: 13px;
+      --text-base: 14px;
+      --text-md: 16px;
+      --text-lg: 20px;
+      --text-xl: 28px;
+
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 16px;
+      --space-4: 24px;
+      --space-5: 32px;
+      --space-6: 48px;
+
+      --radius: 8px;
+      --radius-sm: 6px;
+      --radius-pill: 128px;
+      --radius-full: 9999px;
+    }
+    :root.dark {
+      --background: #0a0a0a;
+      --background-subtle: #111111;
+      --background-muted: #1a1a1a;
+      --foreground: #ededed;
+      --foreground-secondary: #a0a0a0;
+      --foreground-tertiary: #666666;
+      --gray-200: #333333;
+      --gray-300: #444444;
+      --gray-700: #cccccc;
+      --accent: #0070f3;
+      --accent-hover: #3291ff;
+      --accent-subtle: #0a2540;
+      --danger: #ff6b6b;
+      --danger-subtle: #3a1d1d;
+      --button-primary-hover: #cccccc;
+      --button-secondary-hover: #1a1a1a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background: var(--background-subtle);
+      color: var(--foreground);
+      line-height: 1.6;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 16px; right: 16px; z-index: 1100;
+      width: 40px; height: 40px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--gray-200);
+      background: var(--background); color: var(--foreground);
+      font-size: 18px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-4) var(--space-6);
+    }
+
+    header { margin-bottom: var(--space-5); }
+    h1 {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 var(--space-2);
+    }
+    .subtitle {
+      font-size: var(--text-base);
+      color: var(--foreground-secondary);
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .card {
+      display: flex; flex-direction: column;
+      background: var(--background);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+      text-decoration: none;
+      color: inherit;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .card:hover {
+      background: var(--background-subtle);
+      border-color: var(--gray-300);
+      transform: translateY(-2px);
+    }
+    .card-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--radius);
+      background: var(--accent-subtle);
+      color: var(--accent);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      margin-bottom: var(--space-3);
+    }
+    .card-title {
+      font-size: var(--text-md);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 0 0 var(--space-2);
+    }
+    .card-desc {
+      font-size: var(--text-sm);
+      color: var(--foreground-secondary);
+      margin: 0 0 var(--space-3);
+      flex: 1;
+    }
+    .card-link {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--accent);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .card:hover .card-link { text-decoration: underline; }
+
+    footer {
+      margin-top: var(--space-6);
+      font-size: var(--text-xs);
+      color: var(--foreground-tertiary);
+      text-align: center;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换深色 / 浅色模式" title="切换主题">
+    <span class="theme-toggle-icon">🌙</span>
+  </button>
+
+  <div class="wrap">
+    <header>
+      <h1>MiniTools</h1>
+      <p class="subtitle">一组单文件前端小工具 · 双击即用，无需安装</p>
+    </header>
+
+    <div class="grid">
+      <a class="card" href="barcode/index.html">
+        <span class="card-icon">▦</span>
+        <h2 class="card-title">条码生成器</h2>
+        <p class="card-desc">批量生成一维条码（JsBarcode），支持导出 PNG / 打包 ZIP 下载。</p>
+        <span class="card-link">打开工具 →</span>
+      </a>
+
+      <a class="card" href="mermaid-editor/index.html">
+        <span class="card-icon">⟿</span>
+        <h2 class="card-title">流程图编辑器</h2>
+        <p class="card-desc">基于 Mermaid.js 的图表编辑器，实时预览，可导出 PNG。</p>
+        <span class="card-link">打开工具 →</span>
+      </a>
+
+      <a class="card" href="json-formatter/index.html">
+        <span class="card-icon">{}</span>
+        <h2 class="card-title">JSON 格式化</h2>
+        <p class="card-desc">校验 / 格式化 / 压缩 JSON，自动定位错误行列，支持排序与下载。</p>
+        <span class="card-link">打开工具 →</span>
+      </a>
+
+      <a class="card" href="html-to-pdf/index.html">
+        <span class="card-icon">📄</span>
+        <h2 class="card-title">HTML 转 PDF</h2>
+        <p class="card-desc">粘贴或上传 HTML，实时预览后一键导出 PDF，支持页面尺寸与边距。</p>
+        <span class="card-link">打开工具 →</span>
+      </a>
+    </div>
+
+    <footer>
+      设计规范见 <a href="design.md">design.md</a> · 当前共 4 个小工具
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('themeToggle');
+      if (!btn) return;
+      function syncIcon() {
+        var isDark = document.documentElement.classList.contains('dark');
+        btn.querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+        btn.title = isDark ? '切换到浅色' : '切换到深色';
+      }
+      function applyTheme(t) {
+        if (t === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+        try { localStorage.setItem('theme', t); } catch (e) {}
+        syncIcon();
+      }
+      btn.addEventListener('click', function () {
+        applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+      });
+      syncIcon();
+    })();
+  </script>
+</body>
+</html>
