@@ -14,12 +14,13 @@
 
 | 工具 | 说明 | 入口 | 文档 |
 | --- | --- | --- | --- |
-| 批量条码生成器 | 批量生成一维条码（JsBarcode），导出 PNG / 打包 ZIP | [打开](./barcode/index.html) | [文档](./docs/barcode/README.md) |
-| 流程图编辑器 | 基于 Mermaid.js 的图表编辑器，实时预览，导出 PNG | [打开](./mermaid-editor/index.html) | [文档](./docs/mermaid-editor/README.md) |
+| 图片裁切 | 网格切图 / 智能切图 / 智能裁剪 / 选框裁切，打包 ZIP，本地处理 | [打开](./image-splitter/index.html) | [文档](./docs/image-splitter/README.md) |
+| 图片批处理 | 批量格式转换（HEIC/JPG/PNG/WebP）、缩放、压缩，显示原大小→新大小，最多 99 张 | [打开](./image-batch/index.html) | [文档](./docs/image-batch/README.md) |
 | JSON 格式化 | 校验 / 格式化 / 压缩 JSON，自动定位错误行列，支持排序与下载 | [打开](./json-formatter/index.html) | [文档](./docs/json-formatter/README.md) |
+| 流程图编辑器 | 基于 Mermaid.js 的图表编辑器，实时预览，导出 PNG | [打开](./mermaid-editor/index.html) | [文档](./docs/mermaid-editor/README.md) |
 | HTML 转 PDF | 粘贴或上传 HTML，实时预览后一键导出 PDF，支持页面尺寸与边距 | [打开](./html-to-pdf/index.html) | [文档](./docs/html-to-pdf/README.md) |
-| 快速切图 | 按网格 / 智能切图 / 智能裁剪 / 缩放尺寸处理图片，打包 ZIP，本地处理 | [打开](./image-splitter/index.html) | [文档](./docs/image-splitter/README.md) |
 | 表格合并 | 上传两张表格，勾选匹配字段，按全 / 内 / 左 / 右连接合并，导出 xlsx | [打开](./table-merge/index.html) | [文档](./docs/table-merge/README.md) |
+| 批量条码生成器 | 批量生成一维条码（JsBarcode），导出 PNG / 打包 ZIP | [打开](./barcode/index.html) | [文档](./docs/barcode/README.md) |
 
 ## 快速开始
 

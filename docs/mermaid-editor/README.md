@@ -1,4 +1,4 @@
-# Mermaid 编辑器 (Mermaid Editor)
+# 流程图编辑器 (Mermaid Editor)
 
 纯前端、零依赖的单文件在线图表编辑器，左侧写代码、右侧实时预览，支持缩放查看与 PNG 导出。
 

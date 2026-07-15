@@ -1,4 +1,4 @@
-# HTML 转 PDF 工具 (HTML → PDF)
+# HTML 转 PDF (HTML → PDF)
 
 纯前端的单文件工具：粘贴 / 上传 HTML，实时预览，一键导出为 PDF。
 

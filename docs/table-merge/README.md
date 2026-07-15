@@ -1,4 +1,4 @@
-# 表格合并工具 (Table Merge)
+# 表格合并 (Table Merge)
 
 纯前端的单文件工具：上传两张表格（xlsx / xls / csv），勾选匹配字段，按连接模式合并数据，结果可导出为 xlsx。
 

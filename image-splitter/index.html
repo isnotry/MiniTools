@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
-    <title>快速切图工具</title>
+    <title>图片裁切</title>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <style>
         :root {
@@ -313,8 +313,8 @@
         </button>
 
         <div class="header">
-            <h1>快速切图工具</h1>
-            <p class="subtitle">智能内容检测切图 · 网格等分 · 智能裁剪 · 像素缩放，本地处理不上传</p>
+            <h1>图片裁切</h1>
+            <p class="subtitle">智能内容检测切图 · 网格等分 · 智能裁剪 · 选框裁切，本地处理不上传</p>
         </div>
 
         <div class="layout">
@@ -351,7 +351,7 @@
                     <button class="seg-btn active" id="segGrid" type="button" onclick="switchMode('grid')">网格切图</button>
                     <button class="seg-btn" id="segSmartSplit" type="button" onclick="switchMode('smartsplit')">智能切图</button>
                     <button class="seg-btn" id="segSmartCrop" type="button" onclick="switchMode('smartcrop')">智能裁剪</button>
-                    <button class="seg-btn" id="segResize" type="button" onclick="switchMode('resize')">缩放尺寸</button>
+                    <button class="seg-btn" id="segManualCrop" type="button" onclick="switchMode('manualcrop')">选框裁切</button>
                 </div>
 
                 <!-- 网格切图 -->
@@ -418,25 +418,10 @@
                     </div>
                 </div>
 
-                <!-- 缩放尺寸 -->
-                <div class="mode-panel" id="panelResize">
+                <!-- 选框裁切 -->
+                <div class="mode-panel" id="panelManualCrop">
                     <div class="input-group">
-                        <label>目标尺寸（像素）</label>
-                        <div class="resize-row">
-                            <div>
-                                <input type="number" id="widthInput" placeholder="宽" min="1" step="1">
-                            </div>
-                            <button class="lock-btn locked" id="lockBtn" type="button" onclick="toggleLock()" title="锁定宽高比例">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="lockIcon">
-                                    <rect x="5" y="11" width="14" height="10" rx="2"/>
-                                    <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
-                                </svg>
-                            </button>
-                            <div>
-                                <input type="number" id="heightInput" placeholder="高" min="1" step="1">
-                            </div>
-                        </div>
-                        <div class="help-text">填入目标 宽 / 高（像素）。锁定比例时改动其一，另一个按原图比例自动计算。</div>
+                        <div class="help-text">在右侧预览图上<strong>按住鼠标拖拽</strong>框选要保留的区域，松开后可再次拖拽重新选择。点击「裁切并下载」导出选区内图像。</div>
                     </div>
                 </div>
 
@@ -547,13 +532,11 @@
                     document.getElementById('dzThumb').src = ev.target.result;
                     document.getElementById('dzFilename').textContent = file.name;
                     document.getElementById('dzDims').textContent = im.naturalWidth + ' × ' + im.naturalHeight + ' px · ' + formatSize(file.size);
-                    // 缩放模式默认值
-                    document.getElementById('widthInput').value = im.naturalWidth;
-                    document.getElementById('heightInput').value = im.naturalHeight;
                     // 清除缓存
                     smartSplitCache = null;
                     smartCropCache = null;
                     smartCropResult = null;
+                    manualCropRect = null;
                     document.getElementById('exportBtn').disabled = false;
                     document.getElementById('emptyHint').style.display = 'none';
                     document.getElementById('previewInner').style.display = 'block';
@@ -569,9 +552,9 @@
         /* ========== 模式切换 ========== */
         function switchMode(m) {
             mode = m;
-            var btns = { grid: 'segGrid', smartsplit: 'segSmartSplit', smartcrop: 'segSmartCrop', resize: 'segResize' };
-            var panels = { grid: 'panelGrid', smartsplit: 'panelSmartSplit', smartcrop: 'panelSmartCrop', resize: 'panelResize' };
-            var labels = { grid: '切图并下载', smartsplit: '智能切图', smartcrop: '智能裁剪', resize: '缩放并下载' };
+            var btns = { grid: 'segGrid', smartsplit: 'segSmartSplit', smartcrop: 'segSmartCrop', manualcrop: 'segManualCrop' };
+            var panels = { grid: 'panelGrid', smartsplit: 'panelSmartSplit', smartcrop: 'panelSmartCrop', manualcrop: 'panelManualCrop' };
+            var labels = { grid: '切图并下载', smartsplit: '智能切图', smartcrop: '智能裁剪', manualcrop: '裁切并下载' };
             for (var k in btns) {
                 document.getElementById(btns[k]).classList.toggle('active', k === m);
                 document.getElementById(panels[k]).classList.toggle('active', k === m);
@@ -593,32 +576,69 @@
             return { cols: cols, rows: rows };
         }
 
-        /* ========== 缩放模式 ========== */
-        function toggleLock() {
-            ratioLocked = !ratioLocked;
-            var btn = document.getElementById('lockBtn');
-            btn.classList.toggle('locked', ratioLocked);
-            btn.title = ratioLocked ? '已锁定宽高比例' : '未锁定（自由缩放）';
-            document.getElementById('lockIcon').innerHTML = ratioLocked
-                ? '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'
-                : '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/>';
+        /* ========== 选框裁切 ========== */
+        var manualCropRect = null;   // { x, y, w, h } 原图坐标
+        var dragState = null;        // { startX, startY } canvas 坐标
+
+        var pcanvas = document.getElementById('previewCanvas');
+        function canvasPos(e) {
+            var r = pcanvas.getBoundingClientRect();
+            var sx = pcanvas.width / r.width;
+            var sy = pcanvas.height / r.height;
+            return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
         }
-        document.getElementById('widthInput').addEventListener('input', function () {
-            lastEdited = 'width';
-            if (ratioLocked && img) {
-                var w = parseInt(this.value, 10);
-                if (w > 0) document.getElementById('heightInput').value = Math.round(w * img.naturalHeight / img.naturalWidth);
-            }
+        pcanvas.addEventListener('mousedown', function (e) {
+            if (mode !== 'manualcrop' || !img) return;
+            var p = canvasPos(e);
+            dragState = { startX: p.x, startY: p.y };
+            manualCropRect = null;
+        });
+        pcanvas.addEventListener('mousemove', function (e) {
+            if (mode !== 'manualcrop' || !dragState) return;
+            var p = canvasPos(e);
+            var x0 = Math.min(dragState.startX, p.x);
+            var y0 = Math.min(dragState.startY, p.y);
+            var x1 = Math.max(dragState.startX, p.x);
+            var y1 = Math.max(dragState.startY, p.y);
+            renderManualCropDrag({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+        });
+        window.addEventListener('mouseup', function (e) {
+            if (mode !== 'manualcrop' || !dragState) return;
+            var p = canvasPos(e);
+            var x0 = Math.min(dragState.startX, p.x);
+            var y0 = Math.min(dragState.startY, p.y);
+            var x1 = Math.max(dragState.startX, p.x);
+            var y1 = Math.max(dragState.startY, p.y);
+            dragState = null;
+            if (x1 - x0 < 4 || y1 - y0 < 4) { manualCropRect = null; renderPreview(); return; }
+            var scale = Math.min(1, 900 / Math.max(img.naturalWidth, img.naturalHeight));
+            manualCropRect = {
+                x: Math.round(x0 / scale),
+                y: Math.round(y0 / scale),
+                w: Math.round((x1 - x0) / scale),
+                h: Math.round((y1 - y0) / scale)
+            };
             renderPreview();
         });
-        document.getElementById('heightInput').addEventListener('input', function () {
-            lastEdited = 'height';
-            if (ratioLocked && img) {
-                var h = parseInt(this.value, 10);
-                if (h > 0) document.getElementById('widthInput').value = Math.round(h * img.naturalWidth / img.naturalHeight);
-            }
-            renderPreview();
-        });
+        // 拖拽过程中的实时预览
+        function renderManualCropDrag(rect) {
+            var canvas = pcanvas;
+            var ctx = canvas.getContext('2d');
+            var maxSide = 900;
+            var scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+            var vw = Math.round(img.naturalWidth * scale);
+            var vh = Math.round(img.naturalHeight * scale);
+            ctx.clearRect(0, 0, vw, vh);
+            ctx.drawImage(img, 0, 0, vw, vh);
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            ctx.fillRect(0, 0, vw, rect.y);
+            ctx.fillRect(0, rect.y + rect.h, vw, vh - rect.y - rect.h);
+            ctx.fillRect(0, rect.y, rect.x, rect.h);
+            ctx.fillRect(rect.x + rect.w, rect.y, vw - rect.x - rect.w, rect.h);
+            ctx.strokeStyle = '#0070f3'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+            ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w - 1, rect.h - 1);
+            ctx.setLineDash([]);
+        }
 
         /* ========== smartcrop 核心算法 ========== */
 
@@ -949,10 +969,25 @@
                     '位置 (' + smartCropResult.x + ', ' + smartCropResult.y + ')　·　原图 ' + img.naturalWidth + ' × ' + img.naturalHeight;
 
             } else {
-                var tw = parseInt(document.getElementById('widthInput').value, 10) || img.naturalWidth;
-                var th = parseInt(document.getElementById('heightInput').value, 10) || img.naturalHeight;
-                caption.innerHTML = '缩放为 <strong>' + tw + ' × ' + th + '</strong> px　·　原图 ' +
-                    img.naturalWidth + ' × ' + img.naturalHeight + ' px';
+                // 选框裁切：绘制选区遮罩与边框
+                if (manualCropRect) {
+                    var mScale = Math.min(1, 900 / Math.max(img.naturalWidth, img.naturalHeight));
+                    var mx0 = Math.round(manualCropRect.x * mScale);
+                    var my0 = Math.round(manualCropRect.y * mScale);
+                    var mx1 = Math.round((manualCropRect.x + manualCropRect.w) * mScale);
+                    var my1 = Math.round((manualCropRect.y + manualCropRect.h) * mScale);
+                    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                    ctx.fillRect(0, 0, vw, my0);
+                    ctx.fillRect(0, my1, vw, vh - my1);
+                    ctx.fillRect(0, my0, mx0, my1 - my0);
+                    ctx.fillRect(mx1, my0, vw - mx1, my1 - my0);
+                    ctx.strokeStyle = '#0070f3'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+                    ctx.strokeRect(mx0 + 0.5, my0 + 0.5, mx1 - mx0 - 1, my1 - my0 - 1);
+                    ctx.setLineDash([]);
+                    caption.innerHTML = '选框裁切 <strong>' + manualCropRect.w + ' × ' + manualCropRect.h + '</strong> px　·　位置 (' + manualCropRect.x + ', ' + manualCropRect.y + ')　·　原图 ' + img.naturalWidth + ' × ' + img.naturalHeight;
+                } else {
+                    caption.innerHTML = '在预览图上<strong>拖拽鼠标</strong>框选裁切区域';
+                }
             }
         }
 
@@ -980,7 +1015,7 @@
                 if (mode === 'grid') await exportGrid();
                 else if (mode === 'smartsplit') await exportSmartSplit();
                 else if (mode === 'smartcrop') await exportSmartCrop();
-                else await exportResize();
+                else await exportManualCrop();
             } catch (e) {
                 console.error(e);
                 showToast('导出失败：' + (e.message || e), 'error');
@@ -1057,17 +1092,14 @@
             showToast('已导出智能裁剪 ' + smartCropResult.w + '×' + smartCropResult.h, 'success');
         }
 
-        async function exportResize() {
-            var tw = parseInt(document.getElementById('widthInput').value, 10);
-            var th = parseInt(document.getElementById('heightInput').value, 10);
-            if (!tw || !th || tw < 1 || th < 1) { showToast('请输入有效的宽高像素', 'error'); return; }
+        async function exportManualCrop() {
+            if (!manualCropRect) { showToast('请先在预览图上拖拽框选裁切区域', 'error'); return; }
+            var ext = outExt();
             var cv = document.createElement('canvas');
-            cv.width = tw; cv.height = th;
-            var ctx = cv.getContext('2d');
-            ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, 0, 0, tw, th);
-            downloadBlob(await canvasToBlob(cv), imgName + '_' + tw + 'x' + th + '.' + outExt());
-            showToast('已导出 ' + tw + ' × ' + th, 'success');
+            cv.width = manualCropRect.w; cv.height = manualCropRect.h;
+            cv.getContext('2d').drawImage(img, manualCropRect.x, manualCropRect.y, manualCropRect.w, manualCropRect.h, 0, 0, manualCropRect.w, manualCropRect.h);
+            downloadBlob(await canvasToBlob(cv), imgName + '_crop_' + manualCropRect.w + 'x' + manualCropRect.h + '.' + ext);
+            showToast('已导出裁切 ' + manualCropRect.w + ' × ' + manualCropRect.h, 'success');
         }
 
         function downloadBlob(blob, filename) {
@@ -1081,13 +1113,11 @@
             smartSplitCache = null; smartCropCache = null; smartCropResult = null;
             dz.classList.remove('loaded');
             document.getElementById('dzThumb').src = '';
-            document.getElementById('meta').classList.remove('show');
             document.getElementById('exportBtn').disabled = true;
             document.getElementById('emptyHint').style.display = 'block';
             document.getElementById('previewInner').style.display = 'none';
             document.getElementById('previewCaption').innerHTML = '';
-            document.getElementById('widthInput').value = '';
-            document.getElementById('heightInput').value = '';
+            manualCropRect = null;
             document.getElementById('gridInput').value = '2x2';
             document.getElementById('splitSensitivity').value = '0.10';
             document.getElementById('splitMergeGap').value = '5';

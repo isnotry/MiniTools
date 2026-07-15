@@ -1,4 +1,4 @@
-# JSON 格式化工具 (JSON Formatter)
+# JSON 格式化 (JSON Formatter)
 
 纯前端、零依赖的单文件 JSON 处理工具：格式化 / 压缩 / 校验，支持文件载入、键排序、错误定位、复制与下载。
 

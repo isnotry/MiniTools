@@ -1,4 +1,4 @@
-# 批量条码生成器 (Batch Barcode Generator)
+# 条码生成器 (Batch Barcode Generator)
 
 纯前端、零依赖的单文件工具，用于批量生成条码并导出为图片。
 

@@ -156,13 +156,6 @@
       margin: 0 0 var(--space-3);
       flex: 1;
     }
-    .card-link {
-      font-size: var(--text-sm);
-      font-weight: 600;
-      color: var(--accent);
-      display: inline-flex; align-items: center; gap: 6px;
-    }
-    .card:hover .card-link { text-decoration: underline; }
 
     footer {
       margin-top: var(--space-6);
@@ -198,20 +191,42 @@
     </header>
 
     <div class="grid">
-      <a class="card" href="barcode/index.html">
+      <a class="card" href="image-splitter/index.html">
         <span class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <rect x="3" y="5" width="1.6" height="14" rx="0.3"/>
-            <rect x="6.2" y="5" width="1" height="14" rx="0.3"/>
-            <rect x="8.6" y="5" width="2.2" height="14" rx="0.3"/>
-            <rect x="12.4" y="5" width="1" height="14" rx="0.3"/>
-            <rect x="15" y="5" width="2.6" height="14" rx="0.3"/>
-            <rect x="19.4" y="5" width="1.2" height="14" rx="0.3"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M9 3v18"/>
+            <path d="M15 3v18"/>
+            <path d="M3 9h18"/>
+            <path d="M3 15h18"/>
           </svg>
         </span>
-        <h2 class="card-title">条码生成器</h2>
-        <p class="card-desc">批量生成一维条码（JsBarcode），支持导出 PNG / 打包 ZIP 下载。</p>
-        <span class="card-link">打开工具 →</span>
+        <h2 class="card-title">图片裁切</h2>
+        <p class="card-desc">网格等分切图、智能切图、智能裁剪、选框裁切，打包 ZIP，本地处理。</p>
+      </a>
+
+      <a class="card" href="image-batch/index.html">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="7" y="3" width="14" height="14" rx="2"/>
+            <path d="M7 8H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-2"/>
+            <circle cx="11" cy="8" r="1.2"/>
+            <path d="M18 13l-3-3-4 4"/>
+          </svg>
+        </span>
+        <h2 class="card-title">图片批处理</h2>
+        <p class="card-desc">批量格式转换（HEIC/JPG/PNG/WebP）、缩放、压缩，显示原大小→新大小，最多 99 张。</p>
+      </a>
+
+      <a class="card" href="json-formatter/index.html">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3c-2 0-2.5 1.2-2.5 3v2.5c0 1.6-1 2-2 2 1 0 2 .4 2 2V18c0 1.8.5 3 2.5 3"/>
+            <path d="M16 3c2 0 2.5 1.2 2.5 3v2.5c0 1.6 1 2 2 2-1 0-2 .4-2 2V18c0 1.8-.5 3-2.5 3"/>
+          </svg>
+        </span>
+        <h2 class="card-title">JSON 格式化</h2>
+        <p class="card-desc">校验 / 格式化 / 压缩 JSON，自动定位错误行列，支持排序与下载。</p>
       </a>
 
       <a class="card" href="mermaid-editor/index.html">
@@ -226,19 +241,6 @@
         </span>
         <h2 class="card-title">流程图编辑器</h2>
         <p class="card-desc">基于 Mermaid.js 的图表编辑器，实时预览，可导出 PNG。</p>
-        <span class="card-link">打开工具 →</span>
-      </a>
-
-      <a class="card" href="json-formatter/index.html">
-        <span class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3c-2 0-2.5 1.2-2.5 3v2.5c0 1.6-1 2-2 2 1 0 2 .4 2 2V18c0 1.8.5 3 2.5 3"/>
-            <path d="M16 3c2 0 2.5 1.2 2.5 3v2.5c0 1.6 1 2 2 2-1 0-2 .4-2 2V18c0 1.8-.5 3-2.5 3"/>
-          </svg>
-        </span>
-        <h2 class="card-title">JSON 格式化</h2>
-        <p class="card-desc">校验 / 格式化 / 压缩 JSON，自动定位错误行列，支持排序与下载。</p>
-        <span class="card-link">打开工具 →</span>
       </a>
 
       <a class="card" href="html-to-pdf/index.html">
@@ -252,22 +254,6 @@
         </span>
         <h2 class="card-title">HTML 转 PDF</h2>
         <p class="card-desc">粘贴或上传 HTML，实时预览后一键导出 PDF，支持页面尺寸与边距。</p>
-        <span class="card-link">打开工具 →</span>
-      </a>
-
-      <a class="card" href="image-splitter/index.html">
-        <span class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <path d="M9 3v18"/>
-            <path d="M15 3v18"/>
-            <path d="M3 9h18"/>
-            <path d="M3 15h18"/>
-          </svg>
-        </span>
-        <h2 class="card-title">快速切图</h2>
-        <p class="card-desc">选一张图片，按网格等分切图（打包 ZIP）或按像素缩放，可锁定比例，本地处理。</p>
-        <span class="card-link">打开工具 →</span>
       </a>
 
       <a class="card" href="table-merge/index.html">
@@ -283,12 +269,26 @@
         </span>
         <h2 class="card-title">表格合并</h2>
         <p class="card-desc">上传两张表格，勾选匹配字段，按全 / 内 / 左 / 右连接合并，导出 xlsx。</p>
-        <span class="card-link">打开工具 →</span>
+      </a>
+
+      <a class="card" href="barcode/index.html">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="5" width="1.6" height="14" rx="0.3"/>
+            <rect x="6.2" y="5" width="1" height="14" rx="0.3"/>
+            <rect x="8.6" y="5" width="2.2" height="14" rx="0.3"/>
+            <rect x="12.4" y="5" width="1" height="14" rx="0.3"/>
+            <rect x="15" y="5" width="2.6" height="14" rx="0.3"/>
+            <rect x="19.4" y="5" width="1.2" height="14" rx="0.3"/>
+          </svg>
+        </span>
+        <h2 class="card-title">条码生成器</h2>
+        <p class="card-desc">批量生成一维条码（JsBarcode），支持导出 PNG / 打包 ZIP 下载。</p>
       </a>
     </div>
 
     <footer>
-      设计规范见 <a href="design.md">design.md</a> · 当前共 6 个小工具
+      设计规范见 <a href="design.md">design.md</a> · 当前共 7 个小工具
     </footer>
   </div>
 
