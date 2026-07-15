@@ -320,12 +320,86 @@ input[type="file"] { display: none; }       /* 原生控件藏起来，仅展示
 - 合法态复用 `--accent`（蓝），与「成功不另设绿」的纪律一致；非法态用 `--danger`。
 - 文案示例：`✓ JSON 合法`、`✗ 第 3 行第 12 列：Unexpected token`。
 
+### 6.10 页面头部 Header（两种模式，二选一）
+
+工具按形态分两类头部，**同类工具头部必须一致**：
+
+**A. 文档型头部（居中大标题）** —— 用于 `barcode` / `json-formatter` / `html-to-pdf` 等「容器居中」的表单型工具。标题 `h1` 居中，下配副标题；主题按钮 `fixed` 在页面右上角（见 6.7）。
+
+```css
+.header { text-align: center; margin-bottom: var(--space-5); }
+.header h1 { font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.02em; }
+.header .subtitle {
+  margin-top: var(--space-2);
+  font-size: var(--text-base); color: var(--foreground-secondary);
+}
+```
+
+**B. 应用型头部（顶栏）** —— 用于 `mermaid-editor` 等「全屏分栏 / 带模态」的应用型工具。标题左对齐，主题按钮内联在顶栏右侧（`.theme-toggle.inline`，避免与模态关闭按钮重叠）。
+
+```css
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--gray-200);
+}
+.header-titles h1 { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em; }
+.header-titles .subtitle {
+  margin-top: 2px;
+  font-size: var(--text-sm); color: var(--foreground-secondary);
+}
+```
+
+```html
+<div class="header">
+  <div class="header-titles">
+    <h1>Mermaid 编辑器</h1>
+    <p class="subtitle">实时预览 Mermaid 图表，一键导出 PNG</p>
+  </div>
+  <button class="theme-toggle inline" id="themeToggle" type="button">…</button>
+</div>
+```
+
+- **两类头部都必须有「标题 + 副标题」结构**，副标题一句话说明工具用途。
+- **标题 `h1` 一律纯文字，不加 emoji / 符号前缀**（`🔧`、`📄`、`▦` 等）——保持四个工具标题风格统一。emoji 仅允许出现在按钮 / 文件标签等辅助语义处（见 6.2 / 6.8）。
+- 应用型 A 与 B 的差异仅在「居中 vs 顶栏」「h1 28px vs 20px」「主题按钮 fixed vs inline」，其余（字体、字重、字距、副标题色）保持一致。
+
+### 6.11 图标 Icon（统一线性 SVG）
+
+导航卡片图标、工具内装饰性图标一律使用**内联线性 SVG**，禁止混用 emoji + 符号字形（如 `▦ / ⟿ / {} / 📄` 混排会导致基线、字重、风格全部不一致）。
+
+```html
+<span class="card-icon" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- path… -->
+  </svg>
+</span>
+```
+
+```css
+.card-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius);
+  background: var(--accent-subtle);  /* 蓝色淡底 */
+  color: var(--accent);              /* SVG 靠 currentColor 继承强调蓝 */
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: var(--space-3);
+}
+.card-icon svg { width: 24px; height: 24px; }
+```
+
+- **统一规格**：`viewBox="0 0 24 24"`、`fill="none"`、`stroke="currentColor"`、`stroke-width="2"`、圆头圆角（`stroke-linecap/linejoin="round"`）。
+- **颜色靠继承**：SVG 不写死颜色，用 `currentColor` 继承容器的 `--accent`，暗色模式自动适配。
+- 图标应**具象贴合语义**（条码画成粗细不一的竖条、流程图画成父节点分叉子节点、JSON 画成花括号、HTML→PDF 画成带折角文档），避免抽象符号看不出含义。
+- 尺寸统一 24px；徽章容器 44px 圆角方底（`--accent-subtle`）。
+
 ---
 
 ## 7. 布局 (Layout)
 
 - 内容容器最大宽度约 `1100px`（JSON / HTML-PDF 工具约 `1400px`），水平居中。
-- 顶部 Header：白底、`1px solid var(--gray-200)` 底边，深色标题，**不使用深色背景或渐变**。
+- 顶部 Header：分「文档型居中头」与「应用型顶栏头」两种模式，详见 6.10；一律白底、深色标题，**不使用深色背景或渐变**（顶栏头带 `1px solid var(--gray-200)` 底边）。
 - 工具型页面可分区（录入区 / 预览区）为并排卡片或上下卡片，区块间留 `--space-5`。
 - 网格预览用 `grid-template-columns: repeat(auto-fill, minmax(280px, 1fr))`，`gap: 24px`。
 
