@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MiniTools · 小工具导航</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
-
   <style>
     :root {
       --background: #ffffff;
@@ -28,9 +24,9 @@
       --button-primary-hover: #383838;
       --button-secondary-hover: #f2f2f2;
 
-      --font-sans: "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI",
                    Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-      --font-mono: "Geist Mono", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+      --font-mono: "SF Mono", "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
 
       --text-xs: 12px;
       --text-sm: 13px;
@@ -271,6 +267,34 @@
         <p class="card-desc">上传两张表格，勾选匹配字段，按全 / 内 / 左 / 右连接合并，导出 xlsx。</p>
       </a>
 
+      <a class="card" href="image-watermark/index.html">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18"/>
+            <path d="M9 3v18"/>
+            <path d="M14 14h4"/>
+            <path d="M16 12v4"/>
+          </svg>
+        </span>
+        <h2 class="card-title">图片加水印</h2>
+        <p class="card-desc">文字 / 图片水印平铺 / 定位，透明度、大小、旋转、间距可调，实时预览，本地处理。</p>
+      </a>
+
+      <a class="card" href="image-mosaic/index.html">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="6" height="6"/>
+            <rect x="15" y="3" width="6" height="6"/>
+            <rect x="3" y="15" width="6" height="6"/>
+            <rect x="9" y="15" width="6" height="6"/>
+            <rect x="15" y="15" width="6" height="6" fill="currentColor"/>
+          </svg>
+        </span>
+        <h2 class="card-title">图片涂抹打码</h2>
+        <p class="card-desc">鼠标涂抹局部马赛克 / 模糊 / 纯色遮挡，笔刷与颗粒可调，支持撤销重做，本地处理。</p>
+      </a>
+
       <a class="card" href="barcode/index.html">
         <span class="card-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="currentColor">
@@ -288,7 +312,7 @@
     </div>
 
     <footer>
-      设计规范见 <a href="design.md">design.md</a> · 当前共 7 个小工具
+      设计规范见 <a href="design.md">design.md</a> · 当前共 9 个小工具
     </footer>
   </div>
 

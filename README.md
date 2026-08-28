@@ -16,6 +16,8 @@
 | --- | --- | --- | --- |
 | 图片裁切 | 网格切图 / 智能切图 / 智能裁剪 / 选框裁切，打包 ZIP，本地处理 | [打开](./image-splitter/index.html) | [文档](./docs/image-splitter/README.md) |
 | 图片批处理 | 批量格式转换（HEIC/JPG/PNG/WebP）、缩放、压缩，显示原大小→新大小，最多 99 张 | [打开](./image-batch/index.html) | [文档](./docs/image-batch/README.md) |
+| 图片加水印 | 文字 / 图片水印平铺 / 定位，透明度、大小、旋转、间距可调，实时预览 | [打开](./image-watermark/index.html) | — |
+| 图片涂抹打码 | 鼠标涂抹局部马赛克 / 模糊 / 纯色遮挡，笔刷与颗粒可调，支持撤销重做 | [打开](./image-mosaic/index.html) | [文档](./docs/image-mosaic/README.md) |
 | JSON 格式化 | 校验 / 格式化 / 压缩 JSON，自动定位错误行列，支持排序与下载 | [打开](./json-formatter/index.html) | [文档](./docs/json-formatter/README.md) |
 | 流程图编辑器 | 基于 Mermaid.js 的图表编辑器，实时预览，导出 PNG | [打开](./mermaid-editor/index.html) | [文档](./docs/mermaid-editor/README.md) |
 | HTML 转 PDF | 粘贴或上传 HTML，实时预览后一键导出 PDF，支持页面尺寸与边距 | [打开](./html-to-pdf/index.html) | [文档](./docs/html-to-pdf/README.md) |
@@ -38,6 +40,7 @@ MiniTools/
 ├── docs/                    # 所有工具文档
 │   ├── barcode/README.md
 │   ├── html-to-pdf/README.md
+│   ├── image-mosaic/README.md
 │   ├── image-splitter/README.md
 │   ├── json-formatter/README.md
 │   ├── mermaid-editor/README.md
@@ -46,7 +49,11 @@ MiniTools/
 │   └── index.html
 ├── html-to-pdf/
 │   └── index.html
+├── image-mosaic/           # 图片涂抹打码
+│   └── index.html
 ├── image-splitter/
+│   └── index.html
+├── image-watermark/        # 图片加水印
 │   └── index.html
 ├── json-formatter/
 │   └── index.html
