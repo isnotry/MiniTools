@@ -158,9 +158,18 @@
       font-size: var(--text-xs);
       color: var(--foreground-tertiary);
       text-align: center;
+      line-height: 1.8;
     }
-    footer a { color: var(--accent); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
+    footer a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-color: var(--gray-300);
+      text-underline-offset: 2px;
+    }
+    footer a:hover { text-decoration-color: currentColor; }
+    @media (hover: none) {
+      footer a { color: var(--accent); text-decoration-color: var(--gray-300); }
+    }
   </style>
 
   <script>
@@ -236,7 +245,7 @@
           </svg>
         </span>
         <h2 class="card-title">流程图编辑器</h2>
-        <p class="card-desc">基于 Mermaid.js 的图表编辑器，实时预览，可导出 PNG。</p>
+        <p class="card-desc">基于 Mermaid.js 的图表编辑器，实时预览，可导出 PNG / SVG。</p>
       </a>
 
       <a class="card" href="html-to-pdf/index.html">
@@ -295,6 +304,34 @@
         <p class="card-desc">鼠标涂抹局部马赛克 / 模糊 / 纯色遮挡，笔刷与颗粒可调，支持撤销重做，本地处理。</p>
       </a>
 
+      <a class="card" href="image-stitch/index.html">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3.5" width="8" height="7" rx="1"/>
+            <rect x="2" y="13.5" width="8" height="7" rx="1"/>
+            <rect x="13" y="3.5" width="9" height="17" rx="1"/>
+            <path d="M10.5 7h2"/>
+            <path d="M10.5 17h2"/>
+          </svg>
+        </span>
+        <h2 class="card-title">图片拼图</h2>
+        <p class="card-desc">多张图片按数量自动等分排布拼成一张，列数 / 画幅 / 间距 / 背景可调，导出高清拼图。</p>
+      </a>
+
+      <a class="card" href="image-cutout/index.html">
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6" cy="6" r="3"/>
+            <circle cx="6" cy="18" r="3"/>
+            <path d="M20 4L8.12 15.88"/>
+            <path d="M14.47 14.48L20 20"/>
+            <path d="M8.12 8.12L12 12"/>
+          </svg>
+        </span>
+        <h2 class="card-title">图片抠图</h2>
+        <p class="card-desc">自动识别背景色一键去背，容差 / 羽化可调，橡皮擦手动修整，导出透明 PNG，本地处理。</p>
+      </a>
+
       <a class="card" href="barcode/index.html">
         <span class="card-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="currentColor">
@@ -312,7 +349,8 @@
     </div>
 
     <footer>
-      设计规范见 <a href="design.md">design.md</a> · 当前共 9 个小工具
+      <span>本地处理，数据不出浏览器 · 当前共 11 个小工具</span><br />
+      <a href="https://github.com/isnotry/MiniTools" target="_blank" rel="noopener noreferrer">GitHub 开源仓库</a>
     </footer>
   </div>
 
