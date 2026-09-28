@@ -926,6 +926,19 @@
 
       var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
       var busy = false;
+      var mo = null;
+      var MO_OPT = { childList: true, subtree: true, characterData: true };
+      function pause(fn) {
+        if (busy) return;
+        busy = true;
+        try {
+          if (mo) mo.disconnect();
+          fn();
+        } finally {
+          if (mo) { try { mo.observe(document.body, MO_OPT); } catch (e) {} }
+          busy = false;
+        }
+      }
 
       function detect() {
         try {
@@ -950,9 +963,13 @@
       function applyText(node) {
         if (!node || node.nodeType !== 3) return;
         var v = node.nodeValue;
-        if (!v || !CJK.test(v)) return;
-        if (node.__mt_orig == null) node.__mt_orig = v;
-        node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+        if (!v) return;
+        if (node.__mt_orig == null) {
+          if (!CJK.test(v)) return;
+          node.__mt_orig = v;
+        }
+        var nv = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+        if (nv !== v) node.nodeValue = nv;
       }
 
       function applyAttrs(el) {
@@ -960,10 +977,14 @@
         ['placeholder', 'title', 'aria-label'].forEach(function (a) {
           if (!el.hasAttribute(a)) return;
           var v = el.getAttribute(a);
-          if (!v || !CJK.test(v)) return;
+          if (!v) return;
           var k = '__mt_' + a;
-          if (el[k] == null) el[k] = v;
-          el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+          if (el[k] == null) {
+            if (!CJK.test(v)) return;
+            el[k] = v;
+          }
+          var nv = lang === 'en' ? tr(el[k]) : el[k];
+          if (nv !== v) el.setAttribute(a, nv);
         });
       }
 
@@ -981,18 +1002,14 @@
       }
 
       function refresh() {
-        if (busy) return;
-        busy = true;
-        try { walk(document.body); } finally { busy = false; }
+        pause(function () { walk(document.body); });
       }
 
       window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
 
       if (window.MutationObserver) {
-        var mo = new MutationObserver(function (muts) {
-          if (busy) return;
-          busy = true;
-          try {
+        mo = new MutationObserver(function (muts) {
+          pause(function () {
             muts.forEach(function (m) {
               if (m.type === 'childList') {
                 for (var i = 0; i < m.addedNodes.length; i++) {
@@ -1002,9 +1019,9 @@
                 }
               } else if (m.type === 'characterData') applyText(m.target);
             });
-          } finally { busy = false; }
+          });
         });
-        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+        mo.observe(document.body, MO_OPT);
       }
 
       function mountStyle() {

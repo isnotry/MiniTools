@@ -10,7 +10,7 @@
 
 > Eleven pure front-end tools, each one a single `index.html` you can double-click — your images and data never leave the browser.
 
-![Screenshot](https://cdn.jsdelivr.net/gh/isnotry/MiniTools@main/docs/screenshot.png)
+![Screenshot](https://cdn.jsdelivr.net/gh/isnotry/MiniTools@main/docs/screenshot-en.png)
 
 **[Use it online](https://isnotry.github.io/MiniTools/)**
 
