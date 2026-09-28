@@ -32,7 +32,7 @@ MiniTools 是一组不用安装、不用联网、也不用起服务的网页小�
 - **中英双语界面** —— 每个页面右上角都有 `中` / `EN` 切换，选择记在 localStorage 的 `lang`，默认跟随浏览器语言
 - **覆盖日常琐事** —— 图片处理 6 款、文档与数据转换 4 款、条码生成 1 款，共 11 个工具
 - **响应式** —— 卡片栅格在窄屏自动降为单列，手机上同样可用
-- **工具自带文档** —— 每个工具在 [`docs/`](./docs) 下都有独立的说明文档
+- **工具自带文档** —— 每个工具目录里都有一份 `README.md`，说明功能、用法与依赖
 - **MIT 许可** —— 随意修改与二次分发
 
 ## 快速开始
@@ -61,17 +61,17 @@ git clone git@github.com:isnotry/MiniTools.git
 
 | 工具 | 说明 | 入口 | 文档 |
 | --- | --- | --- | --- |
-| 图片裁切 | 网格切图 / 智能切图 / 智能裁剪 / 选框裁切，打包 ZIP | [打开](./image-splitter/index.html) | [文档](./docs/image-splitter/README.md) |
-| 图片批处理 | 批量格式转换（HEIC / JPG / PNG / WebP）、缩放、压缩，显示原大小→新大小，最多 99 张 | [打开](./image-batch/index.html) | [文档](./docs/image-batch/README.md) |
+| 图片裁切 | 网格切图 / 智能切图 / 智能裁剪 / 选框裁切，打包 ZIP | [打开](./image-splitter/index.html) | [文档](./image-splitter/README.md) |
+| 图片批处理 | 批量格式转换（HEIC / JPG / PNG / WebP）、缩放、压缩，显示原大小→新大小，最多 99 张 | [打开](./image-batch/index.html) | [文档](./image-batch/README.md) |
 | 图片加水印 | 文字 / 图片水印平铺或定位，透明度、大小、旋转、间距可调 | [打开](./image-watermark/index.html) | — |
-| 图片涂抹打码 | 鼠标涂抹局部马赛克 / 模糊 / 纯色遮挡，笔刷与颗粒可调，支持撤销重做 | [打开](./image-mosaic/index.html) | [文档](./docs/image-mosaic/README.md) |
-| 图片拼图 | 多张图自动等分排布拼成一张，列数 / 画幅 / 间距 / 背景可调，拖拽排序 | [打开](./image-stitch/index.html) | [文档](./docs/image-stitch/README.md) |
-| 图片抠图 | 自动识别背景色一键去背，容差 / 羽化可调，橡皮擦手动修整，导出透明 PNG | [打开](./image-cutout/index.html) | [文档](./docs/image-cutout/README.md) |
-| JSON 格式化 | 校验 / 格式化 / 压缩 JSON，自动定位错误行列，支持排序与下载 | [打开](./json-formatter/index.html) | [文档](./docs/json-formatter/README.md) |
-| 流程图编辑器 | 基于 Mermaid 的图表编辑器，实时预览，导出 PNG / SVG | [打开](./mermaid-editor/index.html) | [文档](./docs/mermaid-editor/README.md) |
-| HTML 转 PDF | 粘贴或上传 HTML，实时预览后一键导出 PDF，支持页面尺寸与边距 | [打开](./html-to-pdf/index.html) | [文档](./docs/html-to-pdf/README.md) |
-| 表格合并 | 上传两张表格，勾选匹配字段，按全 / 内 / 左 / 右连接合并，导出 xlsx | [打开](./table-merge/index.html) | [文档](./docs/table-merge/README.md) |
-| 条码生成器 | 批量生成一维条码，导出 PNG / 打包 ZIP | [打开](./barcode/index.html) | [文档](./docs/barcode/README.md) |
+| 图片涂抹打码 | 鼠标涂抹局部马赛克 / 模糊 / 纯色遮挡，笔刷与颗粒可调，支持撤销重做 | [打开](./image-mosaic/index.html) | [文档](./image-mosaic/README.md) |
+| 图片拼图 | 多张图自动等分排布拼成一张，列数 / 画幅 / 间距 / 背景可调，拖拽排序 | [打开](./image-stitch/index.html) | [文档](./image-stitch/README.md) |
+| 图片抠图 | 自动识别背景色一键去背，容差 / 羽化可调，橡皮擦手动修整，导出透明 PNG | [打开](./image-cutout/index.html) | [文档](./image-cutout/README.md) |
+| JSON 格式化 | 校验 / 格式化 / 压缩 JSON，自动定位错误行列，支持排序与下载 | [打开](./json-formatter/index.html) | [文档](./json-formatter/README.md) |
+| 流程图编辑器 | 基于 Mermaid 的图表编辑器，实时预览，导出 PNG / SVG | [打开](./mermaid-editor/index.html) | [文档](./mermaid-editor/README.md) |
+| HTML 转 PDF | 粘贴或上传 HTML，实时预览后一键导出 PDF，支持页面尺寸与边距 | [打开](./html-to-pdf/index.html) | [文档](./html-to-pdf/README.md) |
+| 表格合并 | 上传两张表格，勾选匹配字段，按全 / 内 / 左 / 右连接合并，导出 xlsx | [打开](./table-merge/index.html) | [文档](./table-merge/README.md) |
+| 条码生成器 | 批量生成一维条码，导出 PNG / 打包 ZIP | [打开](./barcode/index.html) | [文档](./barcode/README.md) |
 
 ## 界面说明
 
@@ -154,23 +154,15 @@ col  = pos - raw.slice(0, pos).lastIndexOf('\n');
 ```text
 MiniTools/
 ├── index.html                  # 工具导航页
-├── design.md                   # 统一设计规范（Next.js / Geist 风格）
 ├── README.md                   # 本文件（中文版）
 ├── README.en.md                # English version
 ├── LICENSE                     # MIT 许可证
 ├── scripts/                    # 开发者自检脚本（漏翻检查）
 │   └── check_i18n.py
-├── docs/                       # 每个工具一份说明文档
-│   ├── barcode/README.md
-│   ├── html-to-pdf/README.md
-│   ├── image-batch/README.md
-│   ├── image-cutout/README.md
-│   ├── image-mosaic/README.md
-│   ├── image-splitter/README.md
-│   ├── image-stitch/README.md
-│   ├── json-formatter/README.md
-│   ├── mermaid-editor/README.md
-│   └── table-merge/README.md
+├── docs/                       # 设计规范与 README 截图
+│   ├── design.md               # 统一设计规范（Next.js / Geist 风格）
+│   ├── screenshot.png          # 中文界面封面
+│   └── screenshot-en.png       # 英文界面封面
 ├── image-splitter/             # 图片裁切：网格 / 智能切图 / 智能裁剪 / 选框裁切
 ├── image-batch/                # 图片批处理：格式转换 / 缩放 / 压缩
 ├── image-watermark/            # 图片加水印
@@ -182,12 +174,13 @@ MiniTools/
 ├── html-to-pdf/                # HTML 转 PDF
 ├── table-merge/                # 表格合并
 ├── barcode/                    # 批量条码生成器
+├── <工具>/README.md            # 该工具的说明文档（功能 / 用法 / 依赖）
 └── <工具>/vendor/              # 该工具用到的第三方库（离线可用）
 ```
 
 ## 设计规范
 
-全部工具遵循 [`design.md`](./design.md)，要点：
+全部工具遵循 [`docs/design.md`](./docs/design.md)，要点：
 
 - **配色** —— 近黑前景 `#171717`、纯白底、细灰边框 `#eaeaea`；强调蓝 `#0070f3` 只用于链接、聚焦环与品牌，不用于按钮
 - **按钮** —— 主按钮黑底胶囊（前景反色），次按钮 / 幽灵按钮灰边
@@ -209,7 +202,7 @@ MiniTools/
 python3 -m http.server 8765 --bind 127.0.0.1 --directory .
 ```
 
-- **文档要同步** —— 新增或修改工具能力时改四处：工具页副标题、`docs/<工具>/README.md`、本文件的工具表与目录结构、[`index.html`](./index.html) 的卡片描述
+- **文档要同步** —— 新增或修改工具能力时改四处：工具页副标题、工具目录下的 `README.md`、本文件的工具表与目录结构、[`index.html`](./index.html) 的卡片描述
 
 ## 浏览器支持
 

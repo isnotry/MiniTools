@@ -34,7 +34,7 @@ Each tool lives in its own directory and consists of a single `index.html` (HTML
 - **Bilingual interface** —— every page has a `中` / `EN` switch in the top-right corner; the choice is stored under `lang` and follows your browser language by default
 - **Covers everyday chores** —— 6 image tools, 4 document/data tools and 1 barcode tool, 11 in total
 - **Responsive** —— the card grid collapses to a single column on narrow screens, so it works on phones too
-- **Docs included** —— every tool has its own page under [`docs/`](./docs)
+- **Docs included** —— every tool folder ships its own `README.md` describing features, usage and dependencies
 - **MIT licensed** —— modify and redistribute freely
 
 ## Quick start
@@ -63,17 +63,17 @@ git clone git@github.com:isnotry/MiniTools.git
 
 | Tool | What it does | Open | Docs |
 | --- | --- | --- | --- |
-| Image Splitter | Grid / smart slice / smart crop / free selection, exported as ZIP | [Open](./image-splitter/index.html) | [Docs](./docs/image-splitter/README.md) |
-| Image Batch | Convert formats (HEIC / JPG / PNG / WebP), resize and compress up to 99 files, showing before → after sizes | [Open](./image-batch/index.html) | [Docs](./docs/image-batch/README.md) |
+| Image Splitter | Grid / smart slice / smart crop / free selection, exported as ZIP | [Open](./image-splitter/index.html) | [Docs](./image-splitter/README.md) |
+| Image Batch | Convert formats (HEIC / JPG / PNG / WebP), resize and compress up to 99 files, showing before → after sizes | [Open](./image-batch/index.html) | [Docs](./image-batch/README.md) |
 | Image Watermark | Tiled or positioned text / image watermark with opacity, size, rotation and spacing controls | [Open](./image-watermark/index.html) | — |
-| Image Blur | Brush-on mosaic, blur or solid block over selected areas, with undo and redo | [Open](./image-mosaic/index.html) | [Docs](./docs/image-mosaic/README.md) |
-| Image Stitch | Lay out multiple photos into one sheet automatically, with drag-to-reorder | [Open](./image-stitch/index.html) | [Docs](./docs/image-stitch/README.md) |
-| Background Remover | Detect the background colour and remove it in one click, with tolerance, feathering and an eraser | [Open](./image-cutout/index.html) | [Docs](./docs/image-cutout/README.md) |
-| JSON Formatter | Validate, format and minify JSON, pinpoint errors by line and column, sort keys and download | [Open](./json-formatter/index.html) | [Docs](./docs/json-formatter/README.md) |
-| Flowchart Editor | Mermaid-based diagram editor with live preview, PNG / SVG export | [Open](./mermaid-editor/index.html) | [Docs](./docs/mermaid-editor/README.md) |
-| HTML to PDF | Paste or upload HTML, preview it live, then export to PDF with page size and margins | [Open](./html-to-pdf/index.html) | [Docs](./docs/html-to-pdf/README.md) |
-| Spreadsheet Merge | Upload two sheets, pick the key columns, then full / inner / left / right join and export xlsx | [Open](./table-merge/index.html) | [Docs](./docs/table-merge/README.md) |
-| Barcode Generator | Generate 1D barcodes in bulk, export PNG or ZIP | [Open](./barcode/index.html) | [Docs](./docs/barcode/README.md) |
+| Image Blur | Brush-on mosaic, blur or solid block over selected areas, with undo and redo | [Open](./image-mosaic/index.html) | [Docs](./image-mosaic/README.md) |
+| Image Stitch | Lay out multiple photos into one sheet automatically, with drag-to-reorder | [Open](./image-stitch/index.html) | [Docs](./image-stitch/README.md) |
+| Background Remover | Detect the background colour and remove it in one click, with tolerance, feathering and an eraser | [Open](./image-cutout/index.html) | [Docs](./image-cutout/README.md) |
+| JSON Formatter | Validate, format and minify JSON, pinpoint errors by line and column, sort keys and download | [Open](./json-formatter/index.html) | [Docs](./json-formatter/README.md) |
+| Flowchart Editor | Mermaid-based diagram editor with live preview, PNG / SVG export | [Open](./mermaid-editor/index.html) | [Docs](./mermaid-editor/README.md) |
+| HTML to PDF | Paste or upload HTML, preview it live, then export to PDF with page size and margins | [Open](./html-to-pdf/index.html) | [Docs](./html-to-pdf/README.md) |
+| Spreadsheet Merge | Upload two sheets, pick the key columns, then full / inner / left / right join and export xlsx | [Open](./table-merge/index.html) | [Docs](./table-merge/README.md) |
+| Barcode Generator | Generate 1D barcodes in bulk, export PNG or ZIP | [Open](./barcode/index.html) | [Docs](./barcode/README.md) |
 
 ## UI reference
 
@@ -156,23 +156,15 @@ col  = pos - raw.slice(0, pos).lastIndexOf('\n');
 ```text
 MiniTools/
 ├── index.html                  # landing page with all tool cards
-├── design.md                   # shared design spec (Next.js / Geist style)
 ├── README.md                   # Chinese version
 ├── README.en.md                # this file
 ├── LICENSE                     # MIT license
 ├── scripts/                    # developer self-check script (untranslated strings)
 │   └── check_i18n.py
-├── docs/                       # one document per tool
-│   ├── barcode/README.md
-│   ├── html-to-pdf/README.md
-│   ├── image-batch/README.md
-│   ├── image-cutout/README.md
-│   ├── image-mosaic/README.md
-│   ├── image-splitter/README.md
-│   ├── image-stitch/README.md
-│   ├── json-formatter/README.md
-│   ├── mermaid-editor/README.md
-│   └── table-merge/README.md
+├── docs/                       # design spec and README screenshots
+│   ├── design.md               # shared design spec (Next.js / Geist style)
+│   ├── screenshot.png          # Chinese UI cover
+│   └── screenshot-en.png       # English UI cover
 ├── image-splitter/             # grid / smart slice / smart crop / free selection
 ├── image-batch/                # convert / resize / compress
 ├── image-watermark/            # tiled or positioned watermark
@@ -189,7 +181,7 @@ MiniTools/
 
 ## Design system
 
-Every tool follows [`design.md`](./design.md); the essentials:
+Every tool follows [`docs/design.md`](./docs/design.md); the essentials:
 
 - **Colour** —— near-black foreground `#171717`, pure white surface, hairline borders `#eaeaea`; the accent blue `#0070f3` is reserved for links, focus rings and branding, never for buttons
 - **Buttons** —— black pill primary with inverted foreground; secondary and ghost buttons use grey borders
@@ -211,7 +203,7 @@ Every tool follows [`design.md`](./design.md); the essentials:
 python3 -m http.server 8765 --bind 127.0.0.1 --directory .
 ```
 
-- **Keep docs in sync** —— when you add or change a capability, update four places: the tool page subtitle, `docs/<tool>/README.md`, the tool table and layout above, and the card description in [`index.html`](./index.html)
+- **Keep docs in sync** —— when you add or change a capability, update four places: the tool page subtitle, the tool folder's `README.md`, the tool table and layout above, and the card description in [`index.html`](./index.html)
 
 ## Browser support
 
