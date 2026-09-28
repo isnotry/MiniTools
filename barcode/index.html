@@ -423,6 +423,17 @@
         } catch (e) {}
       })();
     </script>
+
+    <script>
+      (function () {
+        try {
+          var l = localStorage.getItem('lang');
+          if (l === 'en') document.documentElement.lang = 'en';
+          else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+          else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+        } catch (e) {}
+      })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -909,6 +920,207 @@ ABC123456789"></textarea>
           applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
         });
         syncIcon();
+      })();
+    </script>
+
+    <script>
+      /* ========== 中英切换 ==========
+         机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+         切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+         首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+         JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+      */
+      (function () {
+        var KEY = 'lang';
+        var MAP = {
+          "条码生成器": "Barcode Generator",
+          "快速生成条码图片，一键保存全部": "Generate barcode images quickly, then save them all at once",
+          "条码录入": "Barcode Input",
+          "输入条码（每行一个，或用逗号/空格分隔）": "Enter barcodes (one per line, or separated by commas / spaces)",
+          "支持 CODE128、EAN-13、UPC-A 等多种格式": "Supports CODE128, EAN-13, UPC-A and more",
+          "条码类型": "Barcode type",
+          "CODE128（推荐，支持任意字符）": "CODE128 (recommended, any characters)",
+          "CODE128A（大写字母+数字）": "CODE128A (uppercase letters + digits)",
+          "CODE128B（通用）": "CODE128B (general purpose)",
+          "CODE128C（纯数字，高密度）": "CODE128C (digits only, high density)",
+          "EAN-13（商品条码）": "EAN-13 (retail product)",
+          "EAN-8（8位商品码）": "EAN-8 (8-digit product code)",
+          "UPC-A（美国商品码）": "UPC-A (US product code)",
+          "ITF-14（物流箱码）": "ITF-14 (shipping carton)",
+          "CODE39（工业用）": "CODE39 (industrial)",
+          "条形高度": "Bar height",
+          "显示文字": "Show text",
+          "显示条码数字": "Show barcode number",
+          "不显示": "Hidden",
+          "自动识别不同条码格式（EAN13/UPC优先）": "Auto-detect barcode format (EAN13 / UPC first)",
+          "生成条码": "Generate barcodes",
+          "一键保存全部": "Save all",
+          "清空": "Clear",
+          "条码预览": "Barcode preview",
+          "个条码": "barcodes",
+          "个有效": "valid",
+          "个无效": "invalid",
+          "在上方输入条码内容，然后点击\"生成条码\"": "Enter barcodes above, then click \"Generate barcodes\"",
+          "请输入条码内容": "Please enter barcode content",
+          "请输入有效的条码内容": "Please enter valid barcode content",
+          "下载此条码": "Download",
+          "删除": "Delete",
+          "条码格式不支持": "Unsupported barcode format",
+          "已删除该条码": "Barcode deleted",
+          "下载成功": "Downloaded",
+          "下载失败，请重试": "Download failed, please try again",
+          "没有可下载的条码": "No barcodes to download",
+          "正在打包，请稍候...": "Packing, please wait…",
+          "已清空所有内容": "All cleared",
+          "打包失败，请重试": "Packing failed, please try again",
+          "切换深色 / 浅色模式": "Toggle dark / light mode",
+          "切换主题": "Switch theme",
+          "切换到浅色": "Switch to light",
+          "切换到深色": "Switch to dark"
+        };
+        var PAIRS = [
+          ["成功生成", "Generated"],
+          ["成功打包", "Packed"],
+          ["个条码", "barcodes"],
+          ["条码格式不支持", "Unsupported barcode format"],
+          ["生成条码", "Generate barcodes"],
+          ["例如：", "e.g."]
+        ];
+
+        var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+        var busy = false;
+
+        function detect() {
+          try {
+            var v = localStorage.getItem(KEY);
+            if (v === 'zh' || v === 'en') return v;
+          } catch (e) {}
+          return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+        }
+        var lang = detect();
+
+        function tr(s) {
+          s = String(s);
+          var t = s.trim();
+          if (MAP[t] != null) return s.replace(t, MAP[t]);
+          var out = s;
+          for (var i = 0; i < PAIRS.length; i++) {
+            if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+          }
+          return out;
+        }
+
+        function applyText(node) {
+          if (!node || node.nodeType !== 3) return;
+          var v = node.nodeValue;
+          if (!v || !CJK.test(v)) return;
+          if (node.__mt_orig == null) node.__mt_orig = v;
+          node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+        }
+
+        function applyAttrs(el) {
+          if (!el || el.nodeType !== 1) return;
+          ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+            if (!el.hasAttribute(a)) return;
+            var v = el.getAttribute(a);
+            if (!v || !CJK.test(v)) return;
+            var k = '__mt_' + a;
+            if (el[k] == null) el[k] = v;
+            el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+          });
+        }
+
+        function walk(root) {
+          var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+          var list = [], n;
+          while ((n = tw.nextNode())) list.push(n);
+          list.forEach(applyText);
+          var els = [];
+          if (root.nodeType === 1) {
+            els.push(root);
+            els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+          }
+          els.forEach(applyAttrs);
+        }
+
+        function refresh() {
+          if (busy) return;
+          busy = true;
+          try { walk(document.body); } finally { busy = false; }
+        }
+
+        window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+        if (window.MutationObserver) {
+          var mo = new MutationObserver(function (muts) {
+            if (busy) return;
+            busy = true;
+            try {
+              muts.forEach(function (m) {
+                if (m.type === 'childList') {
+                  for (var i = 0; i < m.addedNodes.length; i++) {
+                    var a = m.addedNodes[i];
+                    if (a.nodeType === 3) applyText(a);
+                    else if (a.nodeType === 1) walk(a);
+                  }
+                } else if (m.type === 'characterData') applyText(m.target);
+              });
+            } finally { busy = false; }
+          });
+          mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+        }
+
+        function mountStyle() {
+          if (document.getElementById('mt-lang-style')) return;
+          var st = document.createElement('style');
+          st.id = 'mt-lang-style';
+          st.textContent =
+            '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+            'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+            'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+            'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+            'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+            '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+            '.mt-lang.inline{position:static;height:36px;}' +
+            '@media (hover: none){.mt-lang:hover{transform:none;}}';
+          document.head.appendChild(st);
+        }
+
+        function syncDoc() {
+          document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+          var b = document.getElementById('langToggle');
+          if (b) {
+            b.textContent = lang === 'en' ? '中' : 'EN';
+            var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+            b.setAttribute('title', t);
+            b.setAttribute('aria-label', t);
+          }
+          if (document.__mt_title == null) document.__mt_title = document.title;
+          document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+        }
+
+        function mount() {
+          mountStyle();
+          var tt = document.getElementById('themeToggle');
+          if (!tt || document.getElementById('langToggle')) return;
+          var btn = document.createElement('button');
+          var inline = window.getComputedStyle(tt).position !== 'fixed';
+          btn.className = 'mt-lang' + (inline ? ' inline' : '');
+          btn.id = 'langToggle';
+          btn.type = 'button';
+          btn.addEventListener('click', function () {
+            lang = lang === 'en' ? 'zh' : 'en';
+            try { localStorage.setItem(KEY, lang); } catch (e) {}
+            refresh();
+            syncDoc();
+          });
+          tt.parentNode.insertBefore(btn, tt);
+        }
+
+        mount();
+        refresh();
+        syncDoc();
+        window.addEventListener('load', function () { refresh(); syncDoc(); });
       })();
     </script>
 </body>

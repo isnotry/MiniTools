@@ -237,6 +237,16 @@
         } catch (e) {}
       })();
     </script>
+  <script>
+    (function () {
+      try {
+        var l = localStorage.getItem('lang');
+        if (l === 'en') document.documentElement.lang = 'en';
+        else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+        else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
     <div class="container">
@@ -518,5 +528,204 @@
         syncIcon();
       })();
     </script>
+
+  <script>
+    /* ========== 中英切换 ==========
+       机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+       切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+       首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+       JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+    */
+    (function () {
+      var KEY = 'lang';
+      var MAP = {
+        "JSON 格式化": "JSON Formatter",
+        "格式化 / 压缩 / 校验 JSON，一键复制或下载": "Format, minify and validate JSON — copy or download in one click",
+        "切换深色 / 浅色模式": "Toggle dark / light mode",
+        "切换主题": "Switch theme",
+        "切换到浅色": "Switch to light",
+        "切换到深色": "Switch to dark",
+        "① 输入 JSON": "① Input JSON",
+        "原始 JSON": "Original JSON",
+        "📂 载入 JSON 文件": "📂 Load JSON file",
+        "✨ 示例": "✨ Sample",
+        "🗑️ 清空": "🗑️ Clear",
+        "② 操作": "② Actions",
+        "缩进": "Indent",
+        "2 个空格": "2 spaces",
+        "4 个空格": "4 spaces",
+        "排序键": "Sort keys",
+        "保持原顺序": "Keep original order",
+        "按字母排序": "Sort alphabetically",
+        "🎨 格式化": "🎨 Format",
+        "🗜️ 压缩": "🗜️ Minify",
+        "提示：输入时会自动校验合法性，错误将显示位置与原因。": "Tip: JSON is validated as you type — the status bar shows where it breaks and why.",
+        "③ 输出": "③ Output",
+        "等待输入…": "Waiting for input…",
+        "结果": "Result",
+        "格式化后的 JSON 将显示在这里": "Formatted JSON shows up here",
+        "大小：": "Size: ",
+        "行数：": "Lines: ",
+        "📋 复制": "📋 Copy",
+        "📥 下载 .json": "📥 Download .json",
+        "✓ JSON 合法": "✓ Valid JSON",
+        "✓ 已格式化": "✓ Formatted",
+        "格式化完成": "Formatted",
+        "JSON 不合法，无法格式化": "Invalid JSON — cannot format",
+        "✓ 已压缩": "✓ Minified",
+        "压缩完成": "Minified",
+        "JSON 不合法，无法压缩": "Invalid JSON — cannot minify",
+        "请先输入 JSON": "Please enter some JSON first",
+        "没有可复制的内容": "Nothing to copy",
+        "已复制到剪贴板": "Copied to clipboard",
+        "复制失败，请手动选择": "Copy failed — please copy manually",
+        "没有可导出的内容": "Nothing to download",
+        "已下载 formatted.json": "Downloaded formatted.json",
+        "已载入示例": "Sample loaded"
+      };
+      var PAIRS = [
+        ["在此粘贴 JSON，例如：", "Paste your JSON here, e.g."],
+        [" 行第 ", ", column "],
+        ["第 ", "Line "],
+        [" 列附近：", ": "],
+        ["已载入：", "Loaded: "]
+      ];
+
+      var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+      var busy = false;
+
+      function detect() {
+        try {
+          var v = localStorage.getItem(KEY);
+          if (v === 'zh' || v === 'en') return v;
+        } catch (e) {}
+        return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+      }
+      var lang = detect();
+
+      function tr(s) {
+        s = String(s);
+        var t = s.trim();
+        if (MAP[t] != null) return s.replace(t, MAP[t]);
+        var out = s;
+        for (var i = 0; i < PAIRS.length; i++) {
+          if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+        }
+        return out;
+      }
+
+      function applyText(node) {
+        if (!node || node.nodeType !== 3) return;
+        var v = node.nodeValue;
+        if (!v || !CJK.test(v)) return;
+        if (node.__mt_orig == null) node.__mt_orig = v;
+        node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+      }
+
+      function applyAttrs(el) {
+        if (!el || el.nodeType !== 1) return;
+        ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+          if (!el.hasAttribute(a)) return;
+          var v = el.getAttribute(a);
+          if (!v || !CJK.test(v)) return;
+          var k = '__mt_' + a;
+          if (el[k] == null) el[k] = v;
+          el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+        });
+      }
+
+      function walk(root) {
+        var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var list = [], n;
+        while ((n = tw.nextNode())) list.push(n);
+        list.forEach(applyText);
+        var els = [];
+        if (root.nodeType === 1) {
+          els.push(root);
+          els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+        }
+        els.forEach(applyAttrs);
+      }
+
+      function refresh() {
+        if (busy) return;
+        busy = true;
+        try { walk(document.body); } finally { busy = false; }
+      }
+
+      window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+      if (window.MutationObserver) {
+        var mo = new MutationObserver(function (muts) {
+          if (busy) return;
+          busy = true;
+          try {
+            muts.forEach(function (m) {
+              if (m.type === 'childList') {
+                for (var i = 0; i < m.addedNodes.length; i++) {
+                  var a = m.addedNodes[i];
+                  if (a.nodeType === 3) applyText(a);
+                  else if (a.nodeType === 1) walk(a);
+                }
+              } else if (m.type === 'characterData') applyText(m.target);
+            });
+          } finally { busy = false; }
+        });
+        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+      }
+
+      function mountStyle() {
+        if (document.getElementById('mt-lang-style')) return;
+        var st = document.createElement('style');
+        st.id = 'mt-lang-style';
+        st.textContent =
+          '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+          'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+          'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+          'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+          'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+          '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+          '.mt-lang.inline{position:static;height:36px;}' +
+          '@media (hover: none){.mt-lang:hover{transform:none;}}';
+        document.head.appendChild(st);
+      }
+
+      function syncDoc() {
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+        var b = document.getElementById('langToggle');
+        if (b) {
+          b.textContent = lang === 'en' ? '中' : 'EN';
+          var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+          b.setAttribute('title', t);
+          b.setAttribute('aria-label', t);
+        }
+        if (document.__mt_title == null) document.__mt_title = document.title;
+        document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+      }
+
+      function mount() {
+        mountStyle();
+        var tt = document.getElementById('themeToggle');
+        if (!tt || document.getElementById('langToggle')) return;
+        var btn = document.createElement('button');
+        var inline = window.getComputedStyle(tt).position !== 'fixed';
+        btn.className = 'mt-lang' + (inline ? ' inline' : '');
+        btn.id = 'langToggle';
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          lang = lang === 'en' ? 'zh' : 'en';
+          try { localStorage.setItem(KEY, lang); } catch (e) {}
+          refresh();
+          syncDoc();
+        });
+        tt.parentNode.insertBefore(btn, tt);
+      }
+
+      mount();
+      refresh();
+      syncDoc();
+      window.addEventListener('load', function () { refresh(); syncDoc(); });
+    })();
+  </script>
 </body>
 </html>

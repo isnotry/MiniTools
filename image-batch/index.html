@@ -236,6 +236,17 @@
         } catch (e) {}
       })();
     </script>
+
+    <script>
+      (function () {
+        try {
+          var l = localStorage.getItem('lang');
+          if (l === 'en') document.documentElement.lang = 'en';
+          else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+          else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+        } catch (e) {}
+      })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -670,6 +681,213 @@
         });
         syncIcon();
       })();
+    </script>
+
+    <script>
+    /* ========== 中英切换 ==========
+       机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+       切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+       首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+       JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+    */
+    (function () {
+      var KEY = 'lang';
+      var MAP = {
+        "图片批处理": "Image Batch",
+        "批量格式转换 · 缩放 · 压缩，支持 HEIC/HEIF，最多 99 张，本地处理不上传": "Batch convert, resize and compress HEIC/HEIF images — up to 99 files, all processed locally.",
+        "① 添加图片": "① Add images",
+        "点击选择 或 拖拽图片到此": "Click to browse or drop images here",
+        "支持 HEIC / HEIF / JPG / PNG / WebP，最多 99 张": "HEIC / HEIF / JPG / PNG / WebP, up to 99 files",
+        "② 处理设置": "② Processing settings",
+        "输出格式": "Output format",
+        "PNG（无损）": "PNG (lossless)",
+        "质量 (JPEG/WebP)": "Quality (JPEG/WebP)",
+        "JPEG/WebP 质量越低文件越小，0.8 左右通常是体积与画质的平衡点。": "The lower the JPEG/WebP quality, the smaller the file; around 0.8 is usually the sweet spot between size and image quality.",
+        "缩放尺寸（可选，留空则不缩放）": "Resize dimensions (optional, leave blank to keep size)",
+        "宽": "Width",
+        "高": "Height",
+        "锁定宽高比例": "Lock aspect ratio",
+        "已锁定宽高比例": "Aspect ratio locked",
+        "未锁定（自由缩放）": "Unlocked (free resize)",
+        "填入目标宽/高（像素），锁定比例时改一个另一个自动算。留空表示保持原尺寸（仅转换格式/压缩）。": "Enter a target width/height in pixels; while the ratio is locked the other side follows. Leave blank to keep the original size (convert or compress only).",
+        "开始处理": "Start",
+        "打包下载 ZIP": "Download ZIP",
+        "清空": "Clear",
+        "③ 文件列表": "③ Files",
+        "添加图片后，这里会显示文件列表与处理结果": "Files and their results will show up here once you add images.",
+        "加载中…": "Loading…",
+        "错误": "Error",
+        "HEIC 解码库未加载": "HEIC decoder not loaded",
+        "HEIC 解码失败": "HEIC decode failed",
+        "图片解码失败": "Image decode failed",
+        "图片未加载": "Image not loaded",
+        "处理失败": "Processing failed",
+        "没有可处理的图片": "Nothing to process",
+        "没有可下载的结果": "Nothing to download yet",
+        "正在打包…": "Zipping…",
+        "已清空": "Cleared",
+        "切换深色 / 浅色模式": "Toggle dark / light mode",
+        "切换主题": "Switch theme",
+        "切换到浅色": "Switch to light",
+        "切换到深色": "Switch to dark"
+      };
+      var PAIRS = [
+        ["全部处理完成，共", "All done —"],
+        ["张，已添加", "files —"],
+        ["张，本次最多再添加", "already added, at most"],
+        ["张，失败", "done,"],
+        ["完成", ""],
+        ["已添加", "Added"],
+        ["已打包", "Zipped"],
+        ["已加载", "Loaded"],
+        ["已处理", "Processed"],
+        ["最多", "Up to"],
+        ["原始", "original"],
+        ["处理后", "new"],
+        ["节省", "saved"],
+        ["增大", "increased"],
+        ["共", "Total"],
+        ["加载中…", "Loading…"],
+        ["下载", "Download"],
+        ["添加图片后，这里会显示文件列表与处理结果", "Files and their results will show up here once you add images."],
+        ["张", "files"]
+      ];
+
+      var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+      var busy = false;
+
+      function detect() {
+        try {
+          var v = localStorage.getItem(KEY);
+          if (v === 'zh' || v === 'en') return v;
+        } catch (e) {}
+        return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+      }
+      var lang = detect();
+
+      function tr(s) {
+        s = String(s);
+        var t = s.trim();
+        if (MAP[t] != null) return s.replace(t, MAP[t]);
+        var out = s;
+        for (var i = 0; i < PAIRS.length; i++) {
+          if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+        }
+        return out;
+      }
+
+      function applyText(node) {
+        if (!node || node.nodeType !== 3) return;
+        var v = node.nodeValue;
+        if (!v || !CJK.test(v)) return;
+        if (node.__mt_orig == null) node.__mt_orig = v;
+        node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+      }
+
+      function applyAttrs(el) {
+        if (!el || el.nodeType !== 1) return;
+        ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+          if (!el.hasAttribute(a)) return;
+          var v = el.getAttribute(a);
+          if (!v || !CJK.test(v)) return;
+          var k = '__mt_' + a;
+          if (el[k] == null) el[k] = v;
+          el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+        });
+      }
+
+      function walk(root) {
+        var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var list = [], n;
+        while ((n = tw.nextNode())) list.push(n);
+        list.forEach(applyText);
+        var els = [];
+        if (root.nodeType === 1) {
+          els.push(root);
+          els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+        }
+        els.forEach(applyAttrs);
+      }
+
+      function refresh() {
+        if (busy) return;
+        busy = true;
+        try { walk(document.body); } finally { busy = false; }
+      }
+
+      window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+      if (window.MutationObserver) {
+        var mo = new MutationObserver(function (muts) {
+          if (busy) return;
+          busy = true;
+          try {
+            muts.forEach(function (m) {
+              if (m.type === 'childList') {
+                for (var i = 0; i < m.addedNodes.length; i++) {
+                  var a = m.addedNodes[i];
+                  if (a.nodeType === 3) applyText(a);
+                  else if (a.nodeType === 1) walk(a);
+                }
+              } else if (m.type === 'characterData') applyText(m.target);
+            });
+          } finally { busy = false; }
+        });
+        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+      }
+
+      function mountStyle() {
+        if (document.getElementById('mt-lang-style')) return;
+        var st = document.createElement('style');
+        st.id = 'mt-lang-style';
+        st.textContent =
+          '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+          'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+          'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+          'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+          'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+          '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+          '.mt-lang.inline{position:static;height:36px;}' +
+          '@media (hover: none){.mt-lang:hover{transform:none;}}';
+        document.head.appendChild(st);
+      }
+
+      function syncDoc() {
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+        var b = document.getElementById('langToggle');
+        if (b) {
+          b.textContent = lang === 'en' ? '中' : 'EN';
+          var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+          b.setAttribute('title', t);
+          b.setAttribute('aria-label', t);
+        }
+        if (document.__mt_title == null) document.__mt_title = document.title;
+        document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+      }
+
+      function mount() {
+        mountStyle();
+        var tt = document.getElementById('themeToggle');
+        if (!tt || document.getElementById('langToggle')) return;
+        var btn = document.createElement('button');
+        var inline = window.getComputedStyle(tt).position !== 'fixed';
+        btn.className = 'mt-lang' + (inline ? ' inline' : '');
+        btn.id = 'langToggle';
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          lang = lang === 'en' ? 'zh' : 'en';
+          try { localStorage.setItem(KEY, lang); } catch (e) {}
+          refresh();
+          syncDoc();
+        });
+        tt.parentNode.insertBefore(btn, tt);
+      }
+
+      mount();
+      refresh();
+      syncDoc();
+      window.addEventListener('load', function () { refresh(); syncDoc(); });
+    })();
     </script>
 </body>
 </html>

@@ -22,7 +22,7 @@ MiniTools is a set of web tools that need no install, no network and no server: 
 
 Each tool lives in its own directory and consists of a single `index.html` (HTML, CSS and JavaScript all inlined). The repository root ships a landing page, [`index.html`](./index.html). Every third-party library is vendored into its tool directory, so the whole thing makes **zero network requests** from the moment you open it until the file is exported.
 
-> Note: the interface itself is Chinese-only for now; an English UI contribution would be very welcome.
+> Note: every page has a `中` / `EN` switch in the top-right corner, so the whole interface is available in both languages.
 
 ## Features
 
@@ -31,6 +31,7 @@ Each tool lives in its own directory and consists of a single `index.html` (HTML
 - **Nothing leaves your browser** —— images, spreadsheets and JSON are processed in local memory; there is no upload endpoint and no backend at all
 - **One consistent design language** —— every tool follows Next.js / Geist styling: near-black foreground `#171717`, pure white surface, hairline grey borders, black pill primary button
 - **Light and dark themes** —— follows `prefers-color-scheme` by default, with a manual toggle in the top-right corner that remembers your choice
+- **Bilingual interface** —— every page has a `中` / `EN` switch in the top-right corner; the choice is stored under `lang` and follows your browser language by default
 - **Covers everyday chores** —— 6 image tools, 4 document/data tools and 1 barcode tool, 11 in total
 - **Responsive** —— the card grid collapses to a single column on narrow screens, so it works on phones too
 - **Docs included** —— every tool has its own page under [`docs/`](./docs)
@@ -79,6 +80,7 @@ git clone git@github.com:isnotry/MiniTools.git
 | Where | Element | Purpose |
 | --- | --- | --- |
 | Top-right of every page | Theme button 🌙 / ☀️ | Switches light and dark; the choice is stored under `theme` and shared by the landing page and all 11 tools |
+| Left of the theme button | Language button `中` / `EN` | Switches Chinese and English; the choice is stored under `lang` and shared by all 12 pages |
 | Middle of the landing page | Tool cards | Click to enter a tool |
 | Bottom of the landing page | GitHub repository | Opens the source repository |
 | Top of each tool page | Title + subtitle | The subtitle states in one line what the tool does and that it runs locally |
@@ -142,11 +144,12 @@ col  = pos - raw.slice(0, pos).lastIndexOf('\n');
 
 - No backend: the repository contains no server-side code and nothing that calls an external address
 - Files are read and processed in your own browser; exports download through a local Blob
-- The only thing written to your machine is the theme preference:
+- The only things written to your machine are two preferences:
 
 | Storage | Key | Content |
 | --- | --- | --- |
 | localStorage | `theme` | `light` or `dark`, the theme you picked manually; shared by the landing page and all 11 tools |
+| localStorage | `lang` | `zh` or `en`, the interface language you picked manually; shared by all 12 pages |
 
 ## Project layout
 
@@ -157,6 +160,8 @@ MiniTools/
 ├── README.md                   # Chinese version
 ├── README.en.md                # this file
 ├── LICENSE                     # MIT license
+├── scripts/                    # developer self-check script (untranslated strings)
+│   └── check_i18n.py
 ├── docs/                       # one document per tool
 │   ├── barcode/README.md
 │   ├── html-to-pdf/README.md
@@ -194,6 +199,8 @@ Every tool follows [`design.md`](./design.md); the essentials:
 
 ## Development notes
 
+- **Adding a language** —— every page carries a `/* ========== 中英切换 ========== */` block before `</body>` (plus a small lang-detection snippet in `<head>`). Copy the whole block into a new tool and **replace only `MAP` (Chinese → English pairs) and `PAIRS` (fragment replacements for dynamically composed strings)**; the page keeps its Chinese source text and English lives in the table alone. At runtime the block walks text nodes plus `placeholder` / `title` / `aria-label`, and a `MutationObserver` covers strings inserted by JavaScript later. If a page uses `alert` / `confirm`, wrap that copy in `window.mtT()`
+- **Spotting untranslated strings** —— `python3 scripts/check_i18n.py <page path>` lists Chinese that has no entry yet, split into text / attr / js. It is an offline, dependency-free helper for developers
 - **Adding a tool** —— copy the most recent dependency-free tool (e.g. `image-mosaic/index.html`) as your skeleton and keep its tokens, cards, buttons, toasts and theme toggle; default values stay consistent (spacing 12, outer margin 16, single cell 600)
 - **Vendoring is mandatory** —— put new libraries in `<tool>/vendor/` and load them by relative path; **never point at a CDN**, or you break offline usage
 - **Colour and radius** —— always through CSS variables, never hardcoded; dark mode lives in `:root.dark`

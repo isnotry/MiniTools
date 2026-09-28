@@ -311,6 +311,17 @@
       } catch (e) {}
     })();
   </script>
+
+  <script>
+    (function () {
+      try {
+        var l = localStorage.getItem('lang');
+        if (l === 'en') document.documentElement.lang = 'en';
+        else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+        else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换深色 / 浅色模式" title="切换主题">
@@ -527,11 +538,11 @@
         const parseFile = (file) => {
           return new Promise((resolve, reject) => {
             if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
-              reject(new Error('不支持的文件格式，请上传 xlsx、xls 或 csv 文件'));
+              reject(new Error(window.mtT('不支持的文件格式，请上传 xlsx、xls 或 csv 文件')));
               return;
             }
             if (file.size > 100 * 1024 * 1024) {
-              reject(new Error('文件大小超过 100MB 限制'));
+              reject(new Error(window.mtT('文件大小超过 100MB 限制')));
               return;
             }
             const reader = new FileReader();
@@ -542,7 +553,7 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                 if (jsonData.length < 2) {
-                  reject(new Error('表格数据为空或格式不正确'));
+                  reject(new Error(window.mtT('表格数据为空或格式不正确')));
                   return;
                 }
                 const headers = jsonData[0].map(h => String(h).trim());
@@ -553,10 +564,10 @@
                 }).filter(row => Object.values(row).some(v => v));
                 resolve({ headers, data: rows });
               } catch (err) {
-                reject(new Error('文件解析失败: ' + err.message));
+                reject(new Error(window.mtT('文件解析失败: ') + err.message));
               }
             };
-            reader.onerror = () => reject(new Error('文件读取失败'));
+            reader.onerror = () => reject(new Error(window.mtT('文件读取失败')));
             reader.readAsArrayBuffer(file);
           });
         };
@@ -582,7 +593,7 @@
               rightHeaders.value = headers;
               selectedRightFields.value = [...headers];
             }
-            showToast('文件上传成功', 'success');
+            showToast(window.mtT('文件上传成功'), 'success');
           } catch (err) { showToast(err.message, 'error'); }
           event.target.value = '';
         };
@@ -605,7 +616,7 @@
               rightHeaders.value = headers;
               selectedRightFields.value = [...headers];
             }
-            showToast('文件上传成功', 'success');
+            showToast(window.mtT('文件上传成功'), 'success');
           } catch (err) { showToast(err.message, 'error'); }
         };
 
@@ -637,7 +648,7 @@
 
         const mergeData = async () => {
           if (!selectedLeftFields.value.length || !selectedRightFields.value.length) {
-            showToast('请至少选择一个匹配字段', 'warning');
+            showToast(window.mtT('请至少选择一个匹配字段'), 'warning');
             return;
           }
           isMerging.value = true;
@@ -734,8 +745,8 @@
             resultHeaders.value = Array.from(headerSet);
             resultData.value = results;
             matchedCount.value = matchCount;
-            showToast(`合并完成，共 ${results.length} 条结果`, 'success');
-          } catch (err) { showToast('合并失败: ' + err.message, 'error'); }
+            showToast(window.mtT(`合并完成，共 ${results.length} 条结果`), 'success');
+          } catch (err) { showToast(window.mtT('合并失败: ') + err.message, 'error'); }
           finally { isMerging.value = false; }
         };
 
@@ -747,11 +758,11 @@
             resultData.value.forEach(row => { aoa.push(resultHeaders.value.map(h => row[h] || '')); });
             const ws = XLSX.utils.aoa_to_sheet(aoa);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, '合并结果');
-            const fileName = `合并结果_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.utils.book_append_sheet(wb, ws, window.mtT('合并结果'));
+            const fileName = window.mtT(`合并结果_${new Date().toISOString().slice(0,10)}.xlsx`);
             XLSX.writeFile(wb, fileName);
-            showToast('导出成功', 'success');
-          } catch (err) { showToast('导出失败: ' + err.message, 'error'); }
+            showToast(window.mtT('导出成功'), 'success');
+          } catch (err) { showToast(window.mtT('导出失败: ') + err.message, 'error'); }
         };
 
         const clearAll = () => {
@@ -800,6 +811,202 @@
         applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
       });
       syncIcon();
+    })();
+  </script>
+
+  <script>
+    /* ========== 中英切换 ==========
+       机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+       切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+       首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+       JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+    */
+    (function () {
+      var KEY = 'lang';
+      var MAP = {
+        "表格合并": "Spreadsheet Merge",
+        "上传两张表格，勾选匹配字段，按连接模式合并数据": "Upload two sheets, choose the key fields, then merge them with a join",
+        "左侧表格": "Left spreadsheet",
+        "右侧表格": "Right spreadsheet",
+        "点击或拖拽上传表格": "Click to pick a file or drop it here",
+        "支持 .xlsx, .xls, .csv 格式，最大 100MB": "Accepts .xlsx, .xls and .csv files, up to 100MB",
+        "清除": "Clear",
+        "取消": "Clear",
+        "匹配字段选择": "Match Fields",
+        "合并模式：": "Join type:",
+        "全连接（保留全部数据）": "Full join (keep all rows)",
+        "内连接（只保留匹配数据）": "Inner join (matched rows only)",
+        "左连接（保留左侧全部数据）": "Left join (keep all rows from the left)",
+        "右连接（保留右侧全部数据）": "Right join (keep all rows from the right)",
+        "左侧字段": "Left fields",
+        "右侧字段": "Right fields",
+        "全选": "Select all",
+        "开始合并": "Merge",
+        "导出结果": "Export xlsx",
+        "清空数据": "Clear all",
+        "合并结果": "Merged Result",
+        "匹配行数：": "Matched rows:",
+        "总结果行数：": "Total result rows:",
+        "请上传两张表格文件开始合并": "Upload two spreadsheets to start merging",
+        "不支持的文件格式，请上传 xlsx、xls 或 csv 文件": "Unsupported file type — please upload an xlsx, xls or csv file",
+        "文件大小超过 100MB 限制": "File is larger than the 100MB limit",
+        "表格数据为空或格式不正确": "The sheet is empty or its format is not valid",
+        "文件解析失败:": "Could not parse the file:",
+        "文件读取失败": "Could not read the file",
+        "文件上传成功": "File uploaded",
+        "请至少选择一个匹配字段": "Select at least one match field",
+        "合并失败:": "Merge failed:",
+        "导出成功": "Export complete",
+        "导出失败:": "Export failed:",
+        "切换深色 / 浅色模式": "Toggle dark / light mode",
+        "切换主题": "Switch theme",
+        "切换到浅色": "Switch to light",
+        "切换到深色": "Switch to dark"
+      };
+      var PAIRS = [
+        ["合并完成，共", "Merged"],
+        ["显示前", "Showing"],
+        ["条，共", "of"],
+        ["条结果", "rows"],
+        ["合并结果_", "merged_"],
+        ["共", ""],
+        ["行数据", "rows"]
+      ];
+
+      var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+      var busy = false;
+
+      function detect() {
+        try {
+          var v = localStorage.getItem(KEY);
+          if (v === 'zh' || v === 'en') return v;
+        } catch (e) {}
+        return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+      }
+      var lang = detect();
+
+      function tr(s) {
+        s = String(s);
+        var t = s.trim();
+        if (MAP[t] != null) return s.replace(t, MAP[t]);
+        var out = s;
+        for (var i = 0; i < PAIRS.length; i++) {
+          if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+        }
+        return out;
+      }
+
+      function applyText(node) {
+        if (!node || node.nodeType !== 3) return;
+        var v = node.nodeValue;
+        if (!v || !CJK.test(v)) return;
+        if (node.__mt_orig == null) node.__mt_orig = v;
+        node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+      }
+
+      function applyAttrs(el) {
+        if (!el || el.nodeType !== 1) return;
+        ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+          if (!el.hasAttribute(a)) return;
+          var v = el.getAttribute(a);
+          if (!v || !CJK.test(v)) return;
+          var k = '__mt_' + a;
+          if (el[k] == null) el[k] = v;
+          el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+        });
+      }
+
+      function walk(root) {
+        var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var list = [], n;
+        while ((n = tw.nextNode())) list.push(n);
+        list.forEach(applyText);
+        var els = [];
+        if (root.nodeType === 1) {
+          els.push(root);
+          els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+        }
+        els.forEach(applyAttrs);
+      }
+
+      function refresh() {
+        if (busy) return;
+        busy = true;
+        try { walk(document.body); } finally { busy = false; }
+      }
+
+      window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+      if (window.MutationObserver) {
+        var mo = new MutationObserver(function (muts) {
+          if (busy) return;
+          busy = true;
+          try {
+            muts.forEach(function (m) {
+              if (m.type === 'childList') {
+                for (var i = 0; i < m.addedNodes.length; i++) {
+                  var a = m.addedNodes[i];
+                  if (a.nodeType === 3) applyText(a);
+                  else if (a.nodeType === 1) walk(a);
+                }
+              } else if (m.type === 'characterData') applyText(m.target);
+            });
+          } finally { busy = false; }
+        });
+        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+      }
+
+      function mountStyle() {
+        if (document.getElementById('mt-lang-style')) return;
+        var st = document.createElement('style');
+        st.id = 'mt-lang-style';
+        st.textContent =
+          '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+          'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+          'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+          'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+          'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+          '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+          '.mt-lang.inline{position:static;height:36px;}' +
+          '@media (hover: none){.mt-lang:hover{transform:none;}}';
+        document.head.appendChild(st);
+      }
+
+      function syncDoc() {
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+        var b = document.getElementById('langToggle');
+        if (b) {
+          b.textContent = lang === 'en' ? '中' : 'EN';
+          var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+          b.setAttribute('title', t);
+          b.setAttribute('aria-label', t);
+        }
+        if (document.__mt_title == null) document.__mt_title = document.title;
+        document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+      }
+
+      function mount() {
+        mountStyle();
+        var tt = document.getElementById('themeToggle');
+        if (!tt || document.getElementById('langToggle')) return;
+        var btn = document.createElement('button');
+        var inline = window.getComputedStyle(tt).position !== 'fixed';
+        btn.className = 'mt-lang' + (inline ? ' inline' : '');
+        btn.id = 'langToggle';
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          lang = lang === 'en' ? 'zh' : 'en';
+          try { localStorage.setItem(KEY, lang); } catch (e) {}
+          refresh();
+          syncDoc();
+        });
+        tt.parentNode.insertBefore(btn, tt);
+      }
+
+      mount();
+      refresh();
+      syncDoc();
+      window.addEventListener('load', function () { refresh(); syncDoc(); });
     })();
   </script>
 </body>

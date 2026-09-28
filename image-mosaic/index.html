@@ -288,6 +288,17 @@
         } catch (e) {}
       })();
     </script>
+
+    <script>
+      (function () {
+        try {
+          var l = localStorage.getItem('lang');
+          if (l === 'en') document.documentElement.lang = 'en';
+          else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+          else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+        } catch (e) {}
+      })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -1013,6 +1024,206 @@
           applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
         });
         syncIcon();
+      })();
+    </script>
+
+    <script>
+      /* ========== 中英切换 ==========
+         机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+         切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+         首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+         JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+      */
+      (function () {
+        var KEY = 'lang';
+        var MAP = {
+          "图片涂抹打码": "Image Blur",
+          "鼠标涂抹局部马赛克 / 模糊 / 纯色遮挡，笔刷与颗粒可调，支持撤销重做与导出，本地处理不上传": "Brush mosaic, blur or solid color over any area, with adjustable brush and grain, undo / redo and export — all local, nothing uploaded",
+          "① 添加图片": "① Add Image",
+          "点击选择 或 拖拽图片到此": "Click to choose, or drag an image here",
+          "支持 JPG / PNG / WebP，也可直接 Ctrl+V 粘贴": "JPG / PNG / WebP — or just paste with Ctrl+V",
+          "② 涂抹方式": "② Mask Style",
+          "马赛克": "Mosaic",
+          "模糊": "Blur",
+          "纯色": "Solid",
+          "画笔大小": "Brush size",
+          "马赛克颗粒": "Mosaic grain",
+          "模糊强度": "Blur strength",
+          "遮挡颜色": "Fill color",
+          "黑": "Black",
+          "白": "White",
+          "灰": "Gray",
+          "纯色遮挡为不可逆覆盖，适合直接盖住敏感信息。": "Solid fill is permanent — ideal for covering sensitive details.",
+          "③ 操作": "③ Actions",
+          "撤销": "Undo",
+          "重做": "Redo",
+          "全部还原": "Reset all",
+          "按住看原图": "Hold to see original",
+          "④ 导出": "④ Export",
+          "输出格式": "Output format",
+          "PNG（无损）": "PNG (lossless)",
+          "质量": "Quality",
+          "导出分辨率与原图完全一致，不受预览缩放影响。": "Exports at the full original resolution, unaffected by preview scaling.",
+          "下载图片": "Download image",
+          "涂抹区域": "Canvas",
+          "未加载图片": "No image loaded",
+          "添加图片后，在画面上按住鼠标拖动即可涂抹打码": "Add an image, then hold and drag over any area to mask it",
+          "提示：涂抹时可用": "Tip: press",
+          "调整笔刷，": "to resize the brush, ",
+          "请选择图片文件": "Please choose an image file",
+          "图片已加载，可开始涂抹": "Image loaded, ready to mask",
+          "图片解码失败": "Could not decode this image",
+          "已还原为原图": "Reverted to the original",
+          "没有可撤销的操作": "Nothing to undo",
+          "没有可重做的操作": "Nothing to redo",
+          "导出失败": "Export failed",
+          "切换深色 / 浅色模式": "Toggle dark / light mode",
+          "切换主题": "Switch theme",
+          "切换到浅色": "Switch to light",
+          "切换到深色": "Switch to dark"
+        };
+        var PAIRS = [
+          ["导出：", "Export: "],
+          ["已导出", "Exported"],
+          ["已打码", "masked"],
+          ["· 可撤销", "·"],
+          ["步", "undo steps"]
+        ];
+
+        var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+        var busy = false;
+
+        function detect() {
+          try {
+            var v = localStorage.getItem(KEY);
+            if (v === 'zh' || v === 'en') return v;
+          } catch (e) {}
+          return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+        }
+        var lang = detect();
+
+        function tr(s) {
+          s = String(s);
+          var t = s.trim();
+          if (MAP[t] != null) return s.replace(t, MAP[t]);
+          var out = s;
+          for (var i = 0; i < PAIRS.length; i++) {
+            if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+          }
+          return out;
+        }
+
+        function applyText(node) {
+          if (!node || node.nodeType !== 3) return;
+          var v = node.nodeValue;
+          if (!v || !CJK.test(v)) return;
+          if (node.__mt_orig == null) node.__mt_orig = v;
+          node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+        }
+
+        function applyAttrs(el) {
+          if (!el || el.nodeType !== 1) return;
+          ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+            if (!el.hasAttribute(a)) return;
+            var v = el.getAttribute(a);
+            if (!v || !CJK.test(v)) return;
+            var k = '__mt_' + a;
+            if (el[k] == null) el[k] = v;
+            el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+          });
+        }
+
+        function walk(root) {
+          var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+          var list = [], n;
+          while ((n = tw.nextNode())) list.push(n);
+          list.forEach(applyText);
+          var els = [];
+          if (root.nodeType === 1) {
+            els.push(root);
+            els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+          }
+          els.forEach(applyAttrs);
+        }
+
+        function refresh() {
+          if (busy) return;
+          busy = true;
+          try { walk(document.body); } finally { busy = false; }
+        }
+
+        window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+        if (window.MutationObserver) {
+          var mo = new MutationObserver(function (muts) {
+            if (busy) return;
+            busy = true;
+            try {
+              muts.forEach(function (m) {
+                if (m.type === 'childList') {
+                  for (var i = 0; i < m.addedNodes.length; i++) {
+                    var a = m.addedNodes[i];
+                    if (a.nodeType === 3) applyText(a);
+                    else if (a.nodeType === 1) walk(a);
+                  }
+                } else if (m.type === 'characterData') applyText(m.target);
+              });
+            } finally { busy = false; }
+          });
+          mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+        }
+
+        function mountStyle() {
+          if (document.getElementById('mt-lang-style')) return;
+          var st = document.createElement('style');
+          st.id = 'mt-lang-style';
+          st.textContent =
+            '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+            'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+            'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+            'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+            'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+            '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+            '.mt-lang.inline{position:static;height:36px;}' +
+            '@media (hover: none){.mt-lang:hover{transform:none;}}';
+          document.head.appendChild(st);
+        }
+
+        function syncDoc() {
+          document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+          var b = document.getElementById('langToggle');
+          if (b) {
+            b.textContent = lang === 'en' ? '中' : 'EN';
+            var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+            b.setAttribute('title', t);
+            b.setAttribute('aria-label', t);
+          }
+          if (document.__mt_title == null) document.__mt_title = document.title;
+          document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+        }
+
+        function mount() {
+          mountStyle();
+          var tt = document.getElementById('themeToggle');
+          if (!tt || document.getElementById('langToggle')) return;
+          var btn = document.createElement('button');
+          var inline = window.getComputedStyle(tt).position !== 'fixed';
+          btn.className = 'mt-lang' + (inline ? ' inline' : '');
+          btn.id = 'langToggle';
+          btn.type = 'button';
+          btn.addEventListener('click', function () {
+            lang = lang === 'en' ? 'zh' : 'en';
+            try { localStorage.setItem(KEY, lang); } catch (e) {}
+            refresh();
+            syncDoc();
+          });
+          tt.parentNode.insertBefore(btn, tt);
+        }
+
+        mount();
+        refresh();
+        syncDoc();
+        window.addEventListener('load', function () { refresh(); syncDoc(); });
       })();
     </script>
 </body>

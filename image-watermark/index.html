@@ -307,6 +307,17 @@
         } catch (e) {}
       })();
     </script>
+
+    <script>
+      (function () {
+        try {
+          var l = localStorage.getItem('lang');
+          if (l === 'en') document.documentElement.lang = 'en';
+          else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+          else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+        } catch (e) {}
+      })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -1073,6 +1084,245 @@
           applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
         });
         syncIcon();
+      })();
+    </script>
+
+    <script>
+      /* ========== 中英切换 ==========
+         机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+         切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+         首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+         JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+      */
+      (function () {
+        var KEY = 'lang';
+        var MAP = {
+          "图片加水印": "Image Watermark",
+          "文字 / 图片水印 · 平铺 / 单个 · 透明度 · 大小 · 间距 · 旋转，本地处理不上传": "Text or image watermark · tiled or single · opacity, size, spacing and rotation · all local, nothing uploaded",
+          "① 添加图片": "① Add images",
+          "点击选择 或 拖拽图片到此": "Click to choose, or drag images here",
+          "支持 JPG / PNG / WebP，最多 99 张": "JPG / PNG / WebP, up to 99 files",
+          "② 水印类型": "② Watermark type",
+          "文字水印": "Text",
+          "图片水印": "Image",
+          "输入水印文字，如：仅供XX使用 / © 你的名字": "Watermark text, e.g. For XX only / © Your name",
+          "仅供本人使用": "For personal use only",
+          "每行一行水印，多行可做多重水印叠加效果。": "One watermark per line; several lines stack on top of each other.",
+          "上传水印图片": "Upload a watermark image",
+          "支持透明 PNG / WebP，建议小尺寸": "Transparent PNG or WebP, small sizes work best",
+          "水印预览": "Watermark preview",
+          "移除水印图片": "Remove watermark image",
+          "透明 PNG 效果最佳，白色或浅色背景图片建议先抠图。": "Transparent PNGs look best; cut out white or light backgrounds first.",
+          "③ 水印样式": "③ Watermark style",
+          "字体大小（相对图片宽度的百分比）": "Font size (% of image width)",
+          "字号比例": "Font size",
+          "百分比越大字号越大。图片宽度 3000px × 4% = 120px 字号。": "Higher means bigger: a 3000px-wide image at 4% gets a 120px font size.",
+          "水印图片大小（相对图片宽度的百分比）": "Watermark size (% of image width)",
+          "水印大小": "Watermark size",
+          "水印图片缩放到目标图片宽度的此比例。如 3000px × 15% = 450px 宽。": "Scales the watermark to this share of the image width: 3000px × 15% = 450px wide.",
+          "透明度": "Opacity",
+          "旋转角度": "Rotation",
+          "排列方式": "Layout",
+          "平铺（覆盖整张图）": "Tile (cover the whole image)",
+          "居中（单个）": "Center (single)",
+          "右下角": "Bottom right",
+          "左下角": "Bottom left",
+          "右上角": "Top right",
+          "左上角": "Top left",
+          "水印颜色": "Watermark color",
+          "浅色文字（白色 #ffffff）适合深色图片，黑色适合浅色图片": "Light text (white #ffffff) suits dark images, black suits light ones",
+          "水平间距": "Horizontal spacing",
+          "垂直间距": "Vertical spacing",
+          "间距为水印宽/高的倍数，100% = 紧密排列，200% = 宽松留白。": "Spacing is a multiple of the watermark size: 100% is tight, 200% leaves wide gaps.",
+          "④ 输出设置": "④ Output",
+          "输出格式": "Format",
+          "PNG（无损）": "PNG (lossless)",
+          "质量 (JPEG/WebP)": "Quality (JPEG/WebP)",
+          "JPEG/WebP 质量越低文件越小，0.9 左右通常是体积与画质的平衡点。": "For JPEG/WebP, lower quality means smaller files; around 0.9 usually balances size and detail.",
+          "开始处理": "Start processing",
+          "打包下载 ZIP": "Download ZIP",
+          "清空": "Clear",
+          "预览与文件列表": "Preview and files",
+          "添加图片后将显示实时预览": "Add an image to see a live preview",
+          "添加图片后，这里会显示文件列表与处理结果": "Add images and the file list with results shows up here",
+          "请选择图片文件": "Please choose an image file",
+          "水印图片已加载": "Watermark image loaded",
+          "水印图片解码失败": "Could not decode the watermark image",
+          "图片解码失败": "Could not decode the image",
+          "图片未加载": "Image not loaded",
+          "未加载水印图片": "No watermark image loaded",
+          "处理失败": "Processing failed",
+          "请先上传水印图片": "Upload a watermark image first",
+          "请先输入水印文字": "Enter the watermark text first",
+          "没有可处理的图片": "No images to process",
+          "没有可下载的结果": "Nothing to download yet",
+          "正在打包…": "Zipping…",
+          "已清空": "Cleared",
+          "错误": "Error",
+          "切换深色 / 浅色模式": "Toggle dark / light mode",
+          "切换主题": "Switch theme",
+          "切换到浅色": "Switch to light",
+          "切换到深色": "Switch to dark"
+        };
+        var PAIRS = [
+          ["最多", "Up to"],
+          ["张，已添加", "files, already added:"],
+          ["已添加", "Added:"],
+          ["全部处理完成，共", "All done,"],
+          ["完成", "Done"],
+          ["张，失败", "files, failed"],
+          ["失败", "failed"],
+          ["共", "Total"],
+          ["已打包", "Zipped"],
+          ["张", "files"],
+          ["已加载", "Loaded"],
+          ["已处理", "Processed"],
+          ["原始", "Original"],
+          ["处理后", "Output"],
+          ["节省", "Saved"],
+          ["增大", "Larger by"],
+          ["加载中…", "Loading…"],
+          ["加水印结果_", "watermarked_"],
+          ["下载", "Download"],
+          ["添加图片后，这里会显示文件列表与处理结果", "Add images and the file list with results shows up here"],
+          // 单数收尾：1 张 → 1 file，其余保持 files
+          [" 1 files", " 1 file"]
+        ];
+
+        var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+        var busy = false;
+
+        function detect() {
+          try {
+            var v = localStorage.getItem(KEY);
+            if (v === 'zh' || v === 'en') return v;
+          } catch (e) {}
+          return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+        }
+        var lang = detect();
+
+        function tr(s) {
+          s = String(s);
+          var t = s.trim();
+          if (MAP[t] != null) return s.replace(t, MAP[t]);
+          var out = s;
+          for (var i = 0; i < PAIRS.length; i++) {
+            if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+          }
+          return out;
+        }
+
+        function applyText(node) {
+          if (!node || node.nodeType !== 3) return;
+          var v = node.nodeValue;
+          if (!v || !CJK.test(v)) return;
+          if (node.__mt_orig == null) node.__mt_orig = v;
+          node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+        }
+
+        function applyAttrs(el) {
+          if (!el || el.nodeType !== 1) return;
+          ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+            if (!el.hasAttribute(a)) return;
+            var v = el.getAttribute(a);
+            if (!v || !CJK.test(v)) return;
+            var k = '__mt_' + a;
+            if (el[k] == null) el[k] = v;
+            el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+          });
+        }
+
+        function walk(root) {
+          var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+          var list = [], n;
+          while ((n = tw.nextNode())) list.push(n);
+          list.forEach(applyText);
+          var els = [];
+          if (root.nodeType === 1) {
+            els.push(root);
+            els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+          }
+          els.forEach(applyAttrs);
+        }
+
+        function refresh() {
+          if (busy) return;
+          busy = true;
+          try { walk(document.body); } finally { busy = false; }
+        }
+
+        window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+        if (window.MutationObserver) {
+          var mo = new MutationObserver(function (muts) {
+            if (busy) return;
+            busy = true;
+            try {
+              muts.forEach(function (m) {
+                if (m.type === 'childList') {
+                  for (var i = 0; i < m.addedNodes.length; i++) {
+                    var a = m.addedNodes[i];
+                    if (a.nodeType === 3) applyText(a);
+                    else if (a.nodeType === 1) walk(a);
+                  }
+                } else if (m.type === 'characterData') applyText(m.target);
+              });
+            } finally { busy = false; }
+          });
+          mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+        }
+
+        function mountStyle() {
+          if (document.getElementById('mt-lang-style')) return;
+          var st = document.createElement('style');
+          st.id = 'mt-lang-style';
+          st.textContent =
+            '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+            'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+            'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+            'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+            'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+            '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+            '.mt-lang.inline{position:static;height:36px;}' +
+            '@media (hover: none){.mt-lang:hover{transform:none;}}';
+          document.head.appendChild(st);
+        }
+
+        function syncDoc() {
+          document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+          var b = document.getElementById('langToggle');
+          if (b) {
+            b.textContent = lang === 'en' ? '中' : 'EN';
+            var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+            b.setAttribute('title', t);
+            b.setAttribute('aria-label', t);
+          }
+          if (document.__mt_title == null) document.__mt_title = document.title;
+          document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+        }
+
+        function mount() {
+          mountStyle();
+          var tt = document.getElementById('themeToggle');
+          if (!tt || document.getElementById('langToggle')) return;
+          var btn = document.createElement('button');
+          var inline = window.getComputedStyle(tt).position !== 'fixed';
+          btn.className = 'mt-lang' + (inline ? ' inline' : '');
+          btn.id = 'langToggle';
+          btn.type = 'button';
+          btn.addEventListener('click', function () {
+            lang = lang === 'en' ? 'zh' : 'en';
+            try { localStorage.setItem(KEY, lang); } catch (e) {}
+            refresh();
+            syncDoc();
+          });
+          tt.parentNode.insertBefore(btn, tt);
+        }
+
+        mount();
+        refresh();
+        syncDoc();
+        window.addEventListener('load', function () { refresh(); syncDoc(); });
       })();
     </script>
 </body>

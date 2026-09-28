@@ -286,6 +286,16 @@
         } catch (e) {}
       })();
     </script>
+    <script>
+    (function () {
+      try {
+        var l = localStorage.getItem('lang');
+        if (l === 'en') document.documentElement.lang = 'en';
+        else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+        else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
     <div class="container">
@@ -828,6 +838,228 @@
         renderCanvas();
     })();
     </script>
+
+    <script>
+    /* ========== 中英切换 ==========
+       机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+       切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+       首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+       JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+    */
+    (function () {
+      var KEY = 'lang';
+      var MAP = {
+        "图片拼图": "Image Stitch",
+        "选中多张图片，按数量自动等分排布拼成一张，间距、画幅、背景可调，本地处理不上传": "Pick several photos and they are tiled into one sheet automatically. Spacing, aspect ratio and background are adjustable — processed locally, never uploaded.",
+        "① 添加图片": "① Add photos",
+        "点击选择 或 拖拽多张图片到此": "Click to choose, or drop photos here",
+        "支持 JPG / PNG / WebP 等，最多 36 张，可 Ctrl+V 粘贴": "JPG / PNG / WebP and more, up to 36 images, Ctrl+V to paste",
+        "已选": "Selected",
+        "张": "images",
+        "拖拽缩略图可排序": "Drag thumbnails to reorder",
+        "还没有图片，先添加几张吧": "No photos yet — add a few to start",
+        "按名称排序": "Sort by name",
+        "反转顺序": "Reverse order",
+        "清空": "Clear",
+        "② 拼图设置": "② Collage settings",
+        "列数": "Columns",
+        "自动（按数量等分）": "Auto (evenly by count)",
+        "1 列": "1 column",
+        "2 列": "2 columns",
+        "3 列": "3 columns",
+        "4 列": "4 columns",
+        "5 列": "5 columns",
+        "6 列": "6 columns",
+        "单格画幅": "Cell aspect ratio",
+        "方形 1:1": "Square 1:1",
+        "横版 4:3": "Landscape 4:3",
+        "宽幅 16:9": "Widescreen 16:9",
+        "竖版 3:4": "Portrait 3:4",
+        "长竖 9:16": "Tall 9:16",
+        "末行排布": "Last row",
+        "拉伸填满（行列不等分）": "Stretch to fill (uneven cells)",
+        "居中留白（保持列对齐）": "Center with padding (keep columns aligned)",
+        "单图填充": "Image fit",
+        "裁剪填满（不变形）": "Crop to fill (no distortion)",
+        "完整显示（留背景色）": "Fit whole image (show background)",
+        "图片间距": "Image spacing",
+        "外边距": "Margin",
+        "单格边长": "Cell size",
+        "决定输出分辨率，拼图为其倍数 + 间距 + 边距。": "Sets the output resolution — the sheet is a multiple of this, plus spacing and margin.",
+        "背景色": "Background",
+        "白": "White",
+        "浅灰": "Light gray",
+        "黑": "Black",
+        "③ 导出": "③ Export",
+        "输出格式": "Output format",
+        "PNG（无损）": "PNG (lossless)",
+        "质量": "Quality",
+        "下载拼图": "Download collage",
+        "拼图预览": "Collage preview",
+        "未添加图片": "No images added",
+        "添加图片后自动生成拼图预览": "Add photos and the collage preview builds automatically",
+        "所有处理在浏览器本地完成，图片不上传": "Everything runs in your browser — images are never uploaded",
+        "移除": "Remove",
+        "没有可用的图片文件": "No usable image files",
+        "已按文件名排序": "Sorted by file name",
+        "已清空": "Cleared",
+        "导出失败，请重试": "Export failed, please try again",
+        "切换深色 / 浅色模式": "Toggle dark / light mode",
+        "切换主题": "Switch theme",
+        "切换到浅色": "Switch to light",
+        "切换到深色": "Switch to dark"
+      };
+      var PAIRS = [
+        ["最多只能拼", "You can stitch up to"],
+        ["张图片", "images"],
+        ["已达上限，仅添加前", "Limit reached — added only the first"],
+        ["已添加", "Added"],
+        ["张 ·", "images ·"],
+        ["无法读取图片：", "Could not read image: "],
+        ["已导出", "Exported"],
+        ["画布", "Canvas"],
+        ["单格", "cell"],
+        ["间距", "spacing"],
+        ["外边距", "margin"],
+        ["张", "images"]
+      ];
+
+      var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+      var busy = false;
+
+      function detect() {
+        try {
+          var v = localStorage.getItem(KEY);
+          if (v === 'zh' || v === 'en') return v;
+        } catch (e) {}
+        return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+      }
+      var lang = detect();
+
+      function tr(s) {
+        s = String(s);
+        var t = s.trim();
+        if (MAP[t] != null) return s.replace(t, MAP[t]);
+        var out = s;
+        for (var i = 0; i < PAIRS.length; i++) {
+          if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+        }
+        return out;
+      }
+
+      function applyText(node) {
+        if (!node || node.nodeType !== 3) return;
+        var v = node.nodeValue;
+        if (!v || !CJK.test(v)) return;
+        if (node.__mt_orig == null) node.__mt_orig = v;
+        node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+      }
+
+      function applyAttrs(el) {
+        if (!el || el.nodeType !== 1) return;
+        ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+          if (!el.hasAttribute(a)) return;
+          var v = el.getAttribute(a);
+          if (!v || !CJK.test(v)) return;
+          var k = '__mt_' + a;
+          if (el[k] == null) el[k] = v;
+          el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+        });
+      }
+
+      function walk(root) {
+        var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var list = [], n;
+        while ((n = tw.nextNode())) list.push(n);
+        list.forEach(applyText);
+        var els = [];
+        if (root.nodeType === 1) {
+          els.push(root);
+          els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+        }
+        els.forEach(applyAttrs);
+      }
+
+      function refresh() {
+        if (busy) return;
+        busy = true;
+        try { walk(document.body); } finally { busy = false; }
+      }
+
+      window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+      if (window.MutationObserver) {
+        var mo = new MutationObserver(function (muts) {
+          if (busy) return;
+          busy = true;
+          try {
+            muts.forEach(function (m) {
+              if (m.type === 'childList') {
+                for (var i = 0; i < m.addedNodes.length; i++) {
+                  var a = m.addedNodes[i];
+                  if (a.nodeType === 3) applyText(a);
+                  else if (a.nodeType === 1) walk(a);
+                }
+              } else if (m.type === 'characterData') applyText(m.target);
+            });
+          } finally { busy = false; }
+        });
+        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+      }
+
+      function mountStyle() {
+        if (document.getElementById('mt-lang-style')) return;
+        var st = document.createElement('style');
+        st.id = 'mt-lang-style';
+        st.textContent =
+          '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+          'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+          'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+          'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+          'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+          '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+          '.mt-lang.inline{position:static;height:36px;}' +
+          '@media (hover: none){.mt-lang:hover{transform:none;}}';
+        document.head.appendChild(st);
+      }
+
+      function syncDoc() {
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+        var b = document.getElementById('langToggle');
+        if (b) {
+          b.textContent = lang === 'en' ? '中' : 'EN';
+          var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+          b.setAttribute('title', t);
+          b.setAttribute('aria-label', t);
+        }
+        if (document.__mt_title == null) document.__mt_title = document.title;
+        document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+      }
+
+      function mount() {
+        mountStyle();
+        var tt = document.getElementById('themeToggle');
+        if (!tt || document.getElementById('langToggle')) return;
+        var btn = document.createElement('button');
+        var inline = window.getComputedStyle(tt).position !== 'fixed';
+        btn.className = 'mt-lang' + (inline ? ' inline' : '');
+        btn.id = 'langToggle';
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          lang = lang === 'en' ? 'zh' : 'en';
+          try { localStorage.setItem(KEY, lang); } catch (e) {}
+          refresh();
+          syncDoc();
+        });
+        tt.parentNode.insertBefore(btn, tt);
+      }
+
+      mount();
+      refresh();
+      syncDoc();
+      window.addEventListener('load', function () { refresh(); syncDoc(); });
+    })();
+  </script>
 
     <script>
     (function () {

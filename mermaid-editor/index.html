@@ -309,6 +309,17 @@
         } catch (e) {}
       })();
     </script>
+
+    <script>
+      (function () {
+        try {
+          var l = localStorage.getItem('lang');
+          if (l === 'en') document.documentElement.lang = 'en';
+          else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+          else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+        } catch (e) {}
+      })();
+    </script>
 </head>
 <body>
         <div class="header">
@@ -452,7 +463,7 @@ graph TD
             const code = codeEditor.value.trim();
 
             if (!code) {
-                mermaidPreview.innerHTML = '<p style="color: #999;">请输入 Mermaid 代码</p>';
+                mermaidPreview.innerHTML = '<p style="color: #999;">' + window.mtT('请输入 Mermaid 代码') + '</p>';
                 errorMessage.classList.remove('show');
                 return;
             }
@@ -466,7 +477,7 @@ graph TD
             } catch (error) {
                 errorMessage.textContent = '渲染错误: ' + error.message;
                 errorMessage.classList.add('show');
-                mermaidPreview.innerHTML = '<p style="color: #d00;">图表渲染失败</p>';
+                mermaidPreview.innerHTML = '<p style="color: #d00;">' + window.mtT('图表渲染失败') + '</p>';
             }
         }
 
@@ -546,7 +557,7 @@ graph TD
         saveSvgBtn.addEventListener('click', () => {
             const svg = mermaidPreview.querySelector('svg');
             if (!svg) {
-                alert('请先渲染图表');
+                alert(window.mtT('请先渲染图表'));
                 return;
             }
 
@@ -570,7 +581,7 @@ graph TD
                 downloadBlob(blob, `mermaid-${fileStamp()}.svg`);
             } catch (error) {
                 console.error('保存失败:', error);
-                alert('保存 SVG 失败: ' + error.message);
+                alert(window.mtT('保存 SVG 失败: ') + error.message);
             }
         });
 
@@ -578,7 +589,7 @@ graph TD
         savePngBtn.addEventListener('click', async () => {
             const svg = mermaidPreview.querySelector('svg');
             if (!svg) {
-                alert('请先渲染图表');
+                alert(window.mtT('请先渲染图表'));
                 return;
             }
 
@@ -619,7 +630,7 @@ graph TD
 
             } catch (error) {
                 console.error('保存失败:', error);
-                alert('保存图片失败: ' + error.message);
+                alert(window.mtT('保存图片失败: ') + error.message);
             }
         });
 
@@ -628,14 +639,14 @@ graph TD
 
         // 初始渲染示例
         codeEditor.value = `graph TD
-    A[开始] --> B[输入数据]
-    B --> C{验证数据}
-    C -->|有效| D[处理数据]
-    C -->|无效| E[显示错误]
+    A[Start] --> B[Enter data]
+    B --> C{Validate data}
+    C -->|Valid| D[Process data]
+    C -->|Invalid| E[Show error]
     E --> B
-    D --> F[保存结果]
-    F --> G[完成]
-    G --> H[结束]`;
+    D --> F[Save result]
+    F --> G[Finish]
+    G --> H[End]`;
 
         // 页面加载后自动渲染
         window.addEventListener('load', renderMermaid);
@@ -662,6 +673,177 @@ graph TD
         });
         syncIcon();
       })();
+    </script>
+
+    <script>
+    /* ========== 中英切换 ==========
+       机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+       切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+       首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+       JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+    */
+    (function () {
+      var KEY = 'lang';
+      var MAP = {
+        "流程图编辑器": "Flowchart Editor",
+        "实时预览 Mermaid 图表，一键导出 PNG / SVG": "Live Mermaid preview, export PNG / SVG in one click",
+        "预览": "Preview",
+        "下载 SVG": "Download SVG",
+        "下载 PNG": "Download PNG",
+        "代码编辑器": "Code Editor",
+        "🔍 滚轮缩放 | 拖拽移动 | ESC 关闭": "🔍 Scroll to zoom | Drag to move | ESC to close",
+        "请输入 Mermaid 代码": "Enter Mermaid code to start",
+        "图表渲染失败": "Failed to render the diagram",
+        "请先渲染图表": "Render the diagram first",
+        "保存 SVG 失败:": "Failed to save SVG:",
+        "保存图片失败:": "Failed to save the image:",
+        "保存失败:": "Save failed:",
+        "在此输入 Mermaid 代码，例如：\ngraph TD\n    A[开始] --> B[处理]\n    B --> C{判断}\n    C -->|是| D[完成]\n    C -->|否| B": "Enter Mermaid code here, e.g.:\ngraph TD\n    A[Start] --> B[Process]\n    B --> C{Check}\n    C -->|Yes| D[Done]\n    C -->|No| B",
+        "切换深色 / 浅色模式": "Toggle dark / light mode",
+        "切换主题": "Switch theme",
+        "切换到浅色": "Switch to light",
+        "切换到深色": "Switch to dark"
+      };
+      var PAIRS = [
+        ["渲染错误:", "Render error:"],
+        ["在此输入 Mermaid 代码，例如：", "Enter Mermaid code here, e.g.:"]
+      ];
+
+      var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+      var busy = false;
+
+      function detect() {
+        try {
+          var v = localStorage.getItem(KEY);
+          if (v === 'zh' || v === 'en') return v;
+        } catch (e) {}
+        return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+      }
+      var lang = detect();
+
+      function tr(s) {
+        s = String(s);
+        var t = s.trim();
+        if (MAP[t] != null) return s.replace(t, MAP[t]);
+        var out = s;
+        for (var i = 0; i < PAIRS.length; i++) {
+          if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+        }
+        return out;
+      }
+
+      function applyText(node) {
+        if (!node || node.nodeType !== 3) return;
+        var v = node.nodeValue;
+        if (!v || !CJK.test(v)) return;
+        if (node.__mt_orig == null) node.__mt_orig = v;
+        node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+      }
+
+      function applyAttrs(el) {
+        if (!el || el.nodeType !== 1) return;
+        ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+          if (!el.hasAttribute(a)) return;
+          var v = el.getAttribute(a);
+          if (!v || !CJK.test(v)) return;
+          var k = '__mt_' + a;
+          if (el[k] == null) el[k] = v;
+          el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+        });
+      }
+
+      function walk(root) {
+        var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var list = [], n;
+        while ((n = tw.nextNode())) list.push(n);
+        list.forEach(applyText);
+        var els = [];
+        if (root.nodeType === 1) {
+          els.push(root);
+          els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+        }
+        els.forEach(applyAttrs);
+      }
+
+      function refresh() {
+        if (busy) return;
+        busy = true;
+        try { walk(document.body); } finally { busy = false; }
+      }
+
+      window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+      if (window.MutationObserver) {
+        var mo = new MutationObserver(function (muts) {
+          if (busy) return;
+          busy = true;
+          try {
+            muts.forEach(function (m) {
+              if (m.type === 'childList') {
+                for (var i = 0; i < m.addedNodes.length; i++) {
+                  var a = m.addedNodes[i];
+                  if (a.nodeType === 3) applyText(a);
+                  else if (a.nodeType === 1) walk(a);
+                }
+              } else if (m.type === 'characterData') applyText(m.target);
+            });
+          } finally { busy = false; }
+        });
+        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+      }
+
+      function mountStyle() {
+        if (document.getElementById('mt-lang-style')) return;
+        var st = document.createElement('style');
+        st.id = 'mt-lang-style';
+        st.textContent =
+          '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+          'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+          'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+          'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+          'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+          '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+          '.mt-lang.inline{position:static;height:36px;}' +
+          '@media (hover: none){.mt-lang:hover{transform:none;}}';
+        document.head.appendChild(st);
+      }
+
+      function syncDoc() {
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+        var b = document.getElementById('langToggle');
+        if (b) {
+          b.textContent = lang === 'en' ? '中' : 'EN';
+          var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+          b.setAttribute('title', t);
+          b.setAttribute('aria-label', t);
+        }
+        if (document.__mt_title == null) document.__mt_title = document.title;
+        document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+      }
+
+      function mount() {
+        mountStyle();
+        var tt = document.getElementById('themeToggle');
+        if (!tt || document.getElementById('langToggle')) return;
+        var btn = document.createElement('button');
+        var inline = window.getComputedStyle(tt).position !== 'fixed';
+        btn.className = 'mt-lang' + (inline ? ' inline' : '');
+        btn.id = 'langToggle';
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          lang = lang === 'en' ? 'zh' : 'en';
+          try { localStorage.setItem(KEY, lang); } catch (e) {}
+          refresh();
+          syncDoc();
+        });
+        tt.parentNode.insertBefore(btn, tt);
+      }
+
+      mount();
+      refresh();
+      syncDoc();
+      window.addEventListener('load', function () { refresh(); syncDoc(); });
+    })();
     </script>
 </body>
 </html>

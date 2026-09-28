@@ -263,6 +263,16 @@
         } catch (e) {}
       })();
     </script>
+    <script>
+      (function () {
+        try {
+          var l = localStorage.getItem('lang');
+          if (l === 'en') document.documentElement.lang = 'en';
+          else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+          else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+        } catch (e) {}
+      })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -542,8 +552,196 @@
         btn.addEventListener('click', function () {
           applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
         });
-        syncIcon();
-      })();
-    </script>
+      syncIcon();
+    })();
+  </script>
+
+  <script>
+    /* ========== 中英切换 ==========
+       机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+       切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+       首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+       JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+    */
+    (function () {
+      var KEY = 'lang';
+      var MAP = {
+        "HTML 转 PDF": "HTML to PDF",
+        "粘贴 HTML 代码，实时预览，一键导出 PDF": "Paste HTML, preview it live, then export to PDF in one click",
+        "① 输入 HTML": "① HTML Input",
+        "HTML 源码（支持内联或 <style> 样式）": "HTML source (inline styles or a <style> block)",
+        "📂 载入 HTML 文件": "📂 Load HTML file",
+        "✨ 示例": "✨ Example",
+        "🗑️ 清空": "🗑️ Clear",
+        "② 页面设置": "② Page Setup",
+        "页面尺寸": "Page size",
+        "方向": "Orientation",
+        "纵向": "Portrait",
+        "横向": "Landscape",
+        "边距 (mm)": "Margin (mm)",
+        "清晰度 (scale 1-4)": "Scale (1-4)",
+        "文件名": "File name",
+        "导出的 PDF 文件名（不含扩展名）": "Exported PDF file name (no extension)",
+        "编辑时自动预览（输入停止 0.6s 后）": "Auto-preview while typing (0.6s after you stop)",
+        "👁️ 预览": "👁️ Preview",
+        "📥 转换为 PDF": "📥 Export PDF",
+        "提示：导出基于 html2canvas 渲染，PDF 中的文字为图像（不可选中 / 搜索），适合版式截图式导出。如需可选中文字的矢量 PDF，可改用浏览器「打印 → 另存为 PDF」。": "Tip: export is rendered by html2canvas, so text in the PDF is an image (not selectable or searchable) — good for layout snapshots. For selectable vector text, use Print → Save as PDF instead.",
+        "③ 预览": "③ Preview",
+        "在左侧输入 HTML 后点击「预览」": "Enter HTML on the left, then click Preview",
+        "正在生成 PDF，请稍候…": "Generating PDF, please wait…",
+        "预览已更新": "Preview updated",
+        "已清空": "Cleared",
+        "请先输入 HTML 内容": "Please enter HTML content first",
+        "切换深色 / 浅色模式": "Toggle dark / light mode",
+        "切换主题": "Switch theme",
+        "切换到浅色": "Switch to light",
+        "切换到深色": "Switch to dark"
+      };
+      var PAIRS = [
+        ["已载入：", "Loaded: "],
+        ["PDF 已生成：", "PDF created: "],
+        ["生成失败：", "Export failed: "],
+        ["在此粘贴 HTML 代码，例如：", "Paste your HTML here, for example:"],
+        ["在左侧输入 HTML 后点击「预览」", "Enter HTML on the left, then click Preview"],
+        ["<h1>标题</h1>", "<h1>Heading</h1>"],
+        ["<p>这是一段正文。</p>", "<p>This is a paragraph.</p>"]
+      ];
+
+      var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+      var busy = false;
+
+      function detect() {
+        try {
+          var v = localStorage.getItem(KEY);
+          if (v === 'zh' || v === 'en') return v;
+        } catch (e) {}
+        return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+      }
+      var lang = detect();
+
+      function tr(s) {
+        s = String(s);
+        var t = s.trim();
+        if (MAP[t] != null) return s.replace(t, MAP[t]);
+        var out = s;
+        for (var i = 0; i < PAIRS.length; i++) {
+          if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+        }
+        return out;
+      }
+
+      function applyText(node) {
+        if (!node || node.nodeType !== 3) return;
+        var v = node.nodeValue;
+        if (!v || !CJK.test(v)) return;
+        if (node.__mt_orig == null) node.__mt_orig = v;
+        node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+      }
+
+      function applyAttrs(el) {
+        if (!el || el.nodeType !== 1) return;
+        ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+          if (!el.hasAttribute(a)) return;
+          var v = el.getAttribute(a);
+          if (!v || !CJK.test(v)) return;
+          var k = '__mt_' + a;
+          if (el[k] == null) el[k] = v;
+          el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+        });
+      }
+
+      function walk(root) {
+        var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var list = [], n;
+        while ((n = tw.nextNode())) list.push(n);
+        list.forEach(applyText);
+        var els = [];
+        if (root.nodeType === 1) {
+          els.push(root);
+          els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+        }
+        els.forEach(applyAttrs);
+      }
+
+      function refresh() {
+        if (busy) return;
+        busy = true;
+        try { walk(document.body); } finally { busy = false; }
+      }
+
+      window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+      if (window.MutationObserver) {
+        var mo = new MutationObserver(function (muts) {
+          if (busy) return;
+          busy = true;
+          try {
+            muts.forEach(function (m) {
+              if (m.type === 'childList') {
+                for (var i = 0; i < m.addedNodes.length; i++) {
+                  var a = m.addedNodes[i];
+                  if (a.nodeType === 3) applyText(a);
+                  else if (a.nodeType === 1) walk(a);
+                }
+              } else if (m.type === 'characterData') applyText(m.target);
+            });
+          } finally { busy = false; }
+        });
+        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+      }
+
+      function mountStyle() {
+        if (document.getElementById('mt-lang-style')) return;
+        var st = document.createElement('style');
+        st.id = 'mt-lang-style';
+        st.textContent =
+          '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+          'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+          'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+          'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+          'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+          '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+          '.mt-lang.inline{position:static;height:36px;}' +
+          '@media (hover: none){.mt-lang:hover{transform:none;}}';
+        document.head.appendChild(st);
+      }
+
+      function syncDoc() {
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+        var b = document.getElementById('langToggle');
+        if (b) {
+          b.textContent = lang === 'en' ? '中' : 'EN';
+          var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+          b.setAttribute('title', t);
+          b.setAttribute('aria-label', t);
+        }
+        if (document.__mt_title == null) document.__mt_title = document.title;
+        document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+      }
+
+      function mount() {
+        mountStyle();
+        var tt = document.getElementById('themeToggle');
+        if (!tt || document.getElementById('langToggle')) return;
+        var btn = document.createElement('button');
+        var inline = window.getComputedStyle(tt).position !== 'fixed';
+        btn.className = 'mt-lang' + (inline ? ' inline' : '');
+        btn.id = 'langToggle';
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          lang = lang === 'en' ? 'zh' : 'en';
+          try { localStorage.setItem(KEY, lang); } catch (e) {}
+          refresh();
+          syncDoc();
+        });
+        tt.parentNode.insertBefore(btn, tt);
+      }
+
+      mount();
+      refresh();
+      syncDoc();
+      window.addEventListener('load', function () { refresh(); syncDoc(); });
+    })();
+  </script>
 </body>
 </html>

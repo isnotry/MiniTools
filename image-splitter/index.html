@@ -302,6 +302,17 @@
         } catch (e) {}
       })();
     </script>
+
+  <script>
+    (function () {
+      try {
+        var l = localStorage.getItem('lang');
+        if (l === 'en') document.documentElement.lang = 'en';
+        else if (l === 'zh') document.documentElement.lang = 'zh-CN';
+        else if ((navigator.language || '').toLowerCase().indexOf('en') === 0) document.documentElement.lang = 'en';
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
     <div class="container">
@@ -1153,5 +1164,246 @@
         syncIcon();
       })();
     </script>
+
+  <script>
+    /* ========== 中英切换 ==========
+       机制：页面里保留中文原文，MAP 是「中文 → 英文」的对照表。
+       切换时遍历文本节点与 placeholder / title / aria-label 做替换，
+       首次替换前把原文存到节点上，切回中文时还原（不会翻译两次）。
+       JS 动态插入的提示、选项、Toast 由 MutationObserver 补翻。
+    */
+    (function () {
+      var KEY = 'lang';
+      var MAP = {
+        "图片裁切": "Image Splitter",
+        "智能内容检测切图 · 网格等分 · 智能裁剪 · 选框裁切，本地处理不上传": "Content-aware slicing · grid slice · smart crop · select & crop — all processed locally",
+        "① 选择图片": "① Choose an image",
+        "点击选择 或 拖拽图片到此": "Click to choose, or drop an image here",
+        "支持 PNG / JPEG / WebP / GIF 等本地图片": "Supports PNG, JPEG, WebP, GIF and other local images",
+        "重新选择": "Change",
+        "网格切图": "Grid slice",
+        "智能切图": "Smart slice",
+        "智能裁剪": "Smart crop",
+        "选框裁切": "Select & crop",
+        "切分格式（列 × 行）": "Slice grid (columns × rows)",
+        "例如 2x2、3x2、4x1": "e.g. 2x2, 3x2, 4x1",
+        "填": "Enter",
+        "即横向 2 列、纵向 2 行，等分为 4 张；多张自动打包为 ZIP 下载。": "to slice into 2 columns × 2 rows, giving 4 equal pieces; multiple pieces are packed into a ZIP.",
+        "检测灵敏度": "Detection sensitivity",
+        "高 — 检测细微内容": "High — picks up subtle content",
+        "中 — 适用于大部分场景": "Medium — works for most images",
+        "低 — 仅检测强内容": "Low — only strong content",
+        "基于行内亮度标准差自动识别内容区域（内容行像素变化大、背景行接近纯色），无需手动设阈值。切不出来选「高」，误切白边选「低」。": "Finds content bands from per-row brightness deviation — content rows vary, background rows are near solid — with no threshold to set. Choose High if nothing is detected, Low if white margins get sliced in.",
+        "合并间隙（像素）": "Merge gap (px)",
+        "内容区域间 ≤ 此值的空白行/列会并入同一片段，避免碎裂。": "Blank rows or columns narrower than this are folded into the same band, so results don't shatter.",
+        "检测方向": "Detection direction",
+        "横向切割（按行找空白，适合多横幅图）": "Horizontal — blank rows, good for stacked banners",
+        "纵向切割（按列找空白）": "Vertical — blank columns",
+        "行+列网格（行列交叉切割）": "Rows + columns — cross grid",
+        "目标比例": "Target ratio",
+        "1:1 正方形": "1:1 square",
+        "16:9 宽屏": "16:9 widescreen",
+        "4:3 标准": "4:3 standard",
+        "3:2 摄影": "3:2 photo",
+        "2:1 超宽": "2:1 ultrawide",
+        "9:16 竖屏": "9:16 portrait",
+        "自定义…": "Custom…",
+        "基于 smartcrop 算法：边缘检测 + 饱和度 + 三分构图法，自动找到视觉最突出的裁剪区域。": "Uses the smartcrop algorithm — edge detection, saturation and the rule of thirds — to find the most striking crop region.",
+        "自定义比例（宽:高）": "Custom ratio (width:height)",
+        "例如 5:4 或 21:9": "e.g. 5:4 or 21:9",
+        "在右侧预览图上": "On the preview on the right,",
+        "按住鼠标拖拽": "hold and drag",
+        "框选要保留的区域，松开后可再次拖拽重新选择。点击「裁切并下载」导出选区内图像。": "to outline the area you want to keep. Release and drag again to redo, then click “Crop & download” to export the selection.",
+        "输出格式": "Output format",
+        "PNG（无损）": "PNG (lossless)",
+        "质量 (JPEG/WebP)": "Quality (JPEG/WebP)",
+        "切图并下载": "Slice & download",
+        "裁切并下载": "Crop & download",
+        "清空": "Clear",
+        "② 预览": "② Preview",
+        "选择图片后，这里会显示切割 / 裁剪预览": "Choose an image and the slice / crop preview appears here",
+        "请选择图片文件": "Please choose an image file",
+        "图片解码失败": "Could not decode this image",
+        "格式无效，请输入如 2x2": "Invalid format — try something like 2x2",
+        "未检测到内容区域，请调高灵敏度": "No content region detected — try raising sensitivity",
+        "请输入有效比例，如 5:4": "Enter a valid ratio, e.g. 5:4",
+        "无法计算裁剪区域": "Could not compute a crop region",
+        "在预览图上": "On the preview,",
+        "拖拽鼠标": "drag the mouse",
+        "框选裁切区域": "to outline the crop area",
+        "请先选择图片": "Choose an image first",
+        "切分格式无效": "Invalid slice format",
+        "已导出 1 张": "Exported 1 image",
+        "正在切图打包…": "Slicing and packing…",
+        "正在智能切图打包…": "Smart slicing and packing…",
+        "请先在预览图上拖拽框选裁切区域": "Drag on the preview to outline the crop area first",
+        "已清空": "Cleared",
+        "切换深色 / 浅色模式": "Toggle dark / light mode",
+        "切换主题": "Switch theme",
+        "切换到浅色": "Switch to light",
+        "切换到深色": "Switch to dark"
+      };
+      var PAIRS = [
+        ["已载入：", "Loaded: "],
+        ["已导出智能裁剪", "Exported smart crop"],
+        ["已导出裁切", "Exported crop"],
+        ["导出失败：", "Export failed: "],
+        ["成功切分", "Packed"],
+        ["张并打包", "slices"],
+        ["切分为", "Sliced into"],
+        ["张　·　每张约", "pieces · each about"],
+        ["每张约", "each about"],
+        ["检测到", "Detected"],
+        ["个内容区域", "content regions"],
+        ["行（", "rows ("],
+        ["列（", "columns ("],
+        ["px）", "px)"],
+        ["px　·　位置 (", "px · Position ("],
+        ["px　·　", "px · "],
+        ["位置 (", "Position ("],
+        ["原图", "source"],
+        ["智能裁剪", "Smart crop"],
+        ["选框裁切", "Select & crop"],
+        ["拖拽鼠标", "drag the mouse"],
+        ["请输入", "please enter"],
+        ["裁剪区域", "crop region"]
+      ];
+
+      var CJK = /[\u4e00-\u9fff\uff00-\uffef]/;
+      var busy = false;
+
+      function detect() {
+        try {
+          var v = localStorage.getItem(KEY);
+          if (v === 'zh' || v === 'en') return v;
+        } catch (e) {}
+        return (navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh';
+      }
+      var lang = detect();
+
+      function tr(s) {
+        s = String(s);
+        var t = s.trim();
+        if (MAP[t] != null) return s.replace(t, MAP[t]);
+        var out = s;
+        for (var i = 0; i < PAIRS.length; i++) {
+          if (out.indexOf(PAIRS[i][0]) >= 0) out = out.split(PAIRS[i][0]).join(PAIRS[i][1]);
+        }
+        return out;
+      }
+
+      function applyText(node) {
+        if (!node || node.nodeType !== 3) return;
+        var v = node.nodeValue;
+        if (!v || !CJK.test(v)) return;
+        if (node.__mt_orig == null) node.__mt_orig = v;
+        node.nodeValue = lang === 'en' ? tr(node.__mt_orig) : node.__mt_orig;
+      }
+
+      function applyAttrs(el) {
+        if (!el || el.nodeType !== 1) return;
+        ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+          if (!el.hasAttribute(a)) return;
+          var v = el.getAttribute(a);
+          if (!v || !CJK.test(v)) return;
+          var k = '__mt_' + a;
+          if (el[k] == null) el[k] = v;
+          el.setAttribute(a, lang === 'en' ? tr(el[k]) : el[k]);
+        });
+      }
+
+      function walk(root) {
+        var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var list = [], n;
+        while ((n = tw.nextNode())) list.push(n);
+        list.forEach(applyText);
+        var els = [];
+        if (root.nodeType === 1) {
+          els.push(root);
+          els = els.concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+        }
+        els.forEach(applyAttrs);
+      }
+
+      function refresh() {
+        if (busy) return;
+        busy = true;
+        try { walk(document.body); } finally { busy = false; }
+      }
+
+      window.mtT = function (s) { return lang === 'en' ? tr(s) : s; };
+
+      if (window.MutationObserver) {
+        var mo = new MutationObserver(function (muts) {
+          if (busy) return;
+          busy = true;
+          try {
+            muts.forEach(function (m) {
+              if (m.type === 'childList') {
+                for (var i = 0; i < m.addedNodes.length; i++) {
+                  var a = m.addedNodes[i];
+                  if (a.nodeType === 3) applyText(a);
+                  else if (a.nodeType === 1) walk(a);
+                }
+              } else if (m.type === 'characterData') applyText(m.target);
+            });
+          } finally { busy = false; }
+        });
+        mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+      }
+
+      function mountStyle() {
+        if (document.getElementById('mt-lang-style')) return;
+        var st = document.createElement('style');
+        st.id = 'mt-lang-style';
+        st.textContent =
+          '.mt-lang{position:fixed;top:16px;right:64px;z-index:1100;height:40px;min-width:46px;' +
+          'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
+          'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
+          'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
+          'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+          '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
+          '.mt-lang.inline{position:static;height:36px;}' +
+          '@media (hover: none){.mt-lang:hover{transform:none;}}';
+        document.head.appendChild(st);
+      }
+
+      function syncDoc() {
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+        var b = document.getElementById('langToggle');
+        if (b) {
+          b.textContent = lang === 'en' ? '中' : 'EN';
+          var t = lang === 'en' ? 'Switch to Chinese' : 'Switch to English';
+          b.setAttribute('title', t);
+          b.setAttribute('aria-label', t);
+        }
+        if (document.__mt_title == null) document.__mt_title = document.title;
+        document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+      }
+
+      function mount() {
+        mountStyle();
+        var tt = document.getElementById('themeToggle');
+        if (!tt || document.getElementById('langToggle')) return;
+        var btn = document.createElement('button');
+        var inline = window.getComputedStyle(tt).position !== 'fixed';
+        btn.className = 'mt-lang' + (inline ? ' inline' : '');
+        btn.id = 'langToggle';
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          lang = lang === 'en' ? 'zh' : 'en';
+          try { localStorage.setItem(KEY, lang); } catch (e) {}
+          refresh();
+          syncDoc();
+        });
+        tt.parentNode.insertBefore(btn, tt);
+      }
+
+      mount();
+      refresh();
+      syncDoc();
+      window.addEventListener('load', function () { refresh(); syncDoc(); });
+    })();
+  </script>
 </body>
 </html>
