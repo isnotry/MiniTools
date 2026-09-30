@@ -1,62 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://isnotry.github.io/MiniTools/</loc>
+    <loc>https://kingsir.work/MiniTools/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/image-splitter/</loc>
+    <loc>https://kingsir.work/MiniTools/image-splitter/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/image-batch/</loc>
+    <loc>https://kingsir.work/MiniTools/image-batch/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/json-formatter/</loc>
+    <loc>https://kingsir.work/MiniTools/image-watermark/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/html-to-pdf/</loc>
+    <loc>https://kingsir.work/MiniTools/image-mosaic/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/table-merge/</loc>
+    <loc>https://kingsir.work/MiniTools/image-stitch/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/barcode/</loc>
+    <loc>https://kingsir.work/MiniTools/image-cutout/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/image-watermark/</loc>
+    <loc>https://kingsir.work/MiniTools/json-formatter/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/image-mosaic/</loc>
+    <loc>https://kingsir.work/MiniTools/html-to-pdf/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/image-stitch/</loc>
+    <loc>https://kingsir.work/MiniTools/table-merge/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/image-cutout/</loc>
+    <loc>https://kingsir.work/MiniTools/barcode/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://isnotry.github.io/MiniTools/mermaid-editor/</loc>
+    <loc>https://kingsir.work/MiniTools/mermaid-editor/</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

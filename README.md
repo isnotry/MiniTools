@@ -12,7 +12,7 @@
 
 ![界面截图](https://cdn.jsdelivr.net/gh/isnotry/MiniTools@main/docs/screenshot.png)
 
-**[在线使用](https://isnotry.github.io/MiniTools/)**
+**[在线使用](https://kingsir.work/MiniTools/)**
 
 ---
 
@@ -39,7 +39,7 @@ MiniTools 是一组不用安装、不用联网、也不用起服务的网页小�
 
 ### 在线使用
 
-点击 **[在线使用](https://isnotry.github.io/MiniTools/)** 打开工具导航页，无需安装、不用注册。
+点击 **[在线使用](https://kingsir.work/MiniTools/)** 打开工具导航页，无需安装、不用注册。
 
 ### 本地使用
 

@@ -12,7 +12,7 @@
 
 ![Screenshot](https://cdn.jsdelivr.net/gh/isnotry/MiniTools@main/docs/screenshot-en.png)
 
-**[Use it online](https://isnotry.github.io/MiniTools/)**
+**[Use it online](https://kingsir.work/MiniTools/)**
 
 ---
 
@@ -41,7 +41,7 @@ Each tool lives in its own directory and consists of a single `index.html` (HTML
 
 ### Use it online
 
-Open **[Use it online](https://isnotry.github.io/MiniTools/)** — no install, no sign-up.
+Open **[Use it online](https://kingsir.work/MiniTools/)** — no install, no sign-up.
 
 ### Run it locally
 
