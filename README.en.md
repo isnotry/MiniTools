@@ -81,6 +81,7 @@ git clone git@github.com:isnotry/MiniTools.git
 | --- | --- | --- |
 | Top-right of every page | Theme button 🌙 / ☀️ | Switches light and dark; the choice is stored under `theme` and shared by the landing page and all 11 tools |
 | Left of the theme button | Language button `中` / `EN` | Switches Chinese and English; the choice is stored under `lang` and shared by all 12 pages |
+| Left of the language button | GitHub Star button ⭐ / Star | Opens the `isnotry/MiniTools` repository; on narrow screens only the ⭐ icon is shown |
 | Middle of the landing page | Tool cards | Click to enter a tool |
 | Bottom of the landing page | GitHub repository | Opens the source repository |
 | Top of each tool page | Title + subtitle | The subtitle states in one line what the tool does and that it runs locally |

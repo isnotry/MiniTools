@@ -540,7 +540,9 @@
     */
     (function () {
       var KEY = 'lang';
+      var REPO = 'https://github.com/isnotry/MiniTools';
       var MAP = {
+        "在 GitHub 上给项目加星": "Star this project on GitHub",
         "JSON 格式化": "JSON Formatter",
         "格式化 / 压缩 / 校验 JSON，一键复制或下载": "Format, minify and validate JSON — copy or download in one click",
         "切换深色 / 浅色模式": "Toggle dark / light mode",
@@ -697,16 +699,19 @@
         if (document.getElementById('mt-lang-style')) return;
         var st = document.createElement('style');
         st.id = 'mt-lang-style';
-        st.textContent =
-          '.mt-lang{position:fixed;top:16px;right:calc(max(var(--space-4, 16px), calc((100% - var(--mt-shell)) / 2)) + 48px);z-index:1100;height:40px;min-width:46px;' +
-          'padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);' +
-          'background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;' +
-          'font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;' +
-          'justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
+st.textContent =
+          '.mt-actions{position:fixed;top:16px;right:max(var(--space-4, 16px), calc((100% - var(--mt-shell, 1400px)) / 2 + var(--space-4, 16px)));z-index:1100;display:flex;align-items:center;gap:8px;}' +
+          '.mt-actions.inline{position:static;margin-left:auto;}' +
+          '.mt-actions>.theme-toggle{position:static;top:auto;right:auto;left:auto;bottom:auto;margin:0;flex:none;}' +
+          '.mt-star{height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .2s,border-color .2s,transform .2s;}' +
+          '.mt-star:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);color:var(--foreground,#171717);}' +
+          '.mt-star svg{width:15px;height:15px;fill:currentColor;display:block;}' +
+          '.mt-lang{height:40px;min-width:46px;padding:0 12px;border-radius:999px;border:1px solid var(--gray-200,#eaeaea);background:var(--background,#fff);color:var(--foreground,#171717);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s,transform .2s;}' +
           '.mt-lang:hover{border-color:var(--gray-300,#d4d4d4);transform:scale(1.05);}' +
-          '.mt-lang.inline{position:static;height:36px;margin-left:auto;margin-right:8px;}' +
-          '@media (hover: none){.mt-lang:hover{transform:none;}}';
-        document.head.appendChild(st);
+          '.mt-actions.inline .mt-star,.mt-actions.inline .mt-lang{height:36px;}' +
+          '@media (max-width: 640px){.mt-star span{display:none;}.mt-star{padding:0 10px;}}' +
+          '@media (hover: none){.mt-star:hover,.mt-lang:hover{transform:none;}}';
+                document.head.appendChild(st);
       }
 
       function syncDoc() {
@@ -726,9 +731,25 @@
         mountStyle();
         var tt = document.getElementById('themeToggle');
         if (!tt || document.getElementById('langToggle')) return;
-        var btn = document.createElement('button');
         var inline = window.getComputedStyle(tt).position !== 'fixed';
-        btn.className = 'mt-lang' + (inline ? ' inline' : '');
+        var box = document.createElement('div');
+        box.className = 'mt-actions' + (inline ? ' inline' : '');
+        tt.parentNode.insertBefore(box, tt);
+        box.appendChild(tt);
+
+        var star = document.createElement('a');
+        star.className = 'mt-star';
+        star.id = 'starLink';
+        star.href = REPO;
+        star.target = '_blank';
+        star.rel = 'noopener noreferrer';
+        star.setAttribute('title', '在 GitHub 上给项目加星');
+        star.setAttribute('aria-label', '在 GitHub 上给项目加星');
+        star.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span>';
+        box.insertBefore(star, tt);
+
+        var btn = document.createElement('button');
+        btn.className = 'mt-lang';
         btn.id = 'langToggle';
         btn.type = 'button';
         btn.addEventListener('click', function () {
@@ -737,7 +758,7 @@
           refresh();
           syncDoc();
         });
-        tt.parentNode.insertBefore(btn, tt);
+        box.insertBefore(btn, tt);
       }
 
       mount();
