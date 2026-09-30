@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>流程图编辑器</title>
+    <title>流程图编辑器 · Mermaid 在线编辑与导出 | MiniTools</title>
+  <meta name="description" content="在线编写 Mermaid 图表并实时预览，支持流程图、时序图、类图等多种类型，可缩放拖拽查看，一键导出 PNG 或 SVG，本地处理不上传。" />
+  <meta name="keywords" content="Mermaid编辑器,流程图,在线流程图,时序图,类图,Mermaid导出PNG" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <link rel="canonical" href="https://isnotry.github.io/MiniTools/mermaid-editor/" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MiniTools" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="流程图编辑器 · Mermaid 在线编辑与导出 | MiniTools" />
+  <meta property="og:description" content="在线编写 Mermaid 图表并实时预览，支持流程图、时序图、类图等多种类型，可缩放拖拽查看，一键导出 PNG 或 SVG，本地处理不上传。" />
+  <meta property="og:url" content="https://isnotry.github.io/MiniTools/mermaid-editor/" />
+  <meta property="og:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="流程图编辑器 · Mermaid 在线编辑与导出 | MiniTools" />
+  <meta name="twitter:description" content="在线编写 Mermaid 图表并实时预览，支持流程图、时序图、类图等多种类型，可缩放拖拽查看，一键导出 PNG 或 SVG，本地处理不上传。" />
+  <meta name="twitter:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "WebApplication", "name": "流程图编辑器 · Mermaid 在线编辑与导出 | MiniTools", "url": "https://isnotry.github.io/MiniTools/mermaid-editor/", "description": "在线编写 Mermaid 图表并实时预览，支持流程图、时序图、类图等多种类型，可缩放拖拽查看，一键导出 PNG 或 SVG，本地处理不上传。", "applicationCategory": "UtilitiesApplication", "applicationSubCategory": "流程图编辑器", "operatingSystem": "Any (runs in a web browser)", "browserRequirements": "需要支持 Canvas 与 ES2017 的现代浏览器", "isAccessibleForFree": true, "inLanguage": "zh-CN", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"}, "isPartOf": {"@type": "WebSite", "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}}
+  </script>
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}, {"@type": "ListItem", "position": 2, "name": "流程图编辑器", "url": "https://isnotry.github.io/MiniTools/mermaid-editor/"}]}
+  </script>
     <script src="vendor/mermaid.min.js"></script>
     <style>
         :root {
@@ -299,7 +323,9 @@
         }
         .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
         .theme-toggle.inline { position: static; width: 36px; height: 36px; }
-    </style>
+    
+    .mt-crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;line-height:1.4;color:var(--foreground-tertiary,#666);margin:0 0 8px;}.mt-crumb a{color:inherit;text-decoration:none;}.mt-crumb a:hover{text-decoration:underline;}.mt-crumb .mt-crumb-sep{opacity:.55;}
+  </style>
     <script>
       (function () {
         try {
@@ -326,6 +352,11 @@
 <body>
         <div class="header">
             <div class="header-titles">
+                <nav class="mt-crumb" aria-label="面包屑导航">
+                  <a href="../index.html">MiniTools</a>
+                  <span class="mt-crumb-sep" aria-hidden="true">/</span>
+                  <span>流程图编辑器</span>
+                </nav>
                 <h1>流程图编辑器</h1>
                 <p class="subtitle">实时预览 Mermaid 图表，一键导出 PNG / SVG</p>
             </div>
@@ -688,6 +719,9 @@ graph TD
       var KEY = 'lang';
       var REPO = 'https://github.com/isnotry/MiniTools';
       var MAP = {
+        "面包屑导航": "Breadcrumb",
+        "流程图编辑器 · Mermaid 在线编辑与导出 | MiniTools": "Flowchart Editor · Mermaid Editing and Export | MiniTools",
+        "在线编写 Mermaid 图表并实时预览，支持流程图、时序图、类图等多种类型，可缩放拖拽查看，一键导出 PNG 或 SVG，本地处理不上传。": "Write Mermaid diagrams and preview them live — flowcharts, sequence diagrams, class diagrams and more. Zoom and pan around the canvas, then export PNG or SVG. Everything runs locally.",
         "在 GitHub 上给项目加星": "Star this project on GitHub",
         "流程图编辑器": "Flowchart Editor",
         "实时预览 Mermaid 图表，一键导出 PNG / SVG": "Live Mermaid preview, export PNG / SVG in one click",
@@ -843,6 +877,11 @@ st.textContent =
         }
         if (document.__mt_title == null) document.__mt_title = document.title;
         document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+        var md = document.querySelector('meta[name="description"]');
+        if (md) {
+          if (md.__mt_orig == null) md.__mt_orig = md.getAttribute('content');
+          md.setAttribute('content', lang === 'en' ? tr(md.__mt_orig) : md.__mt_orig);
+        }
       }
 
       function mount() {

@@ -3,7 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>表格合并</title>
+  <title>表格合并 · Excel 在线关联与连接 | MiniTools</title>
+  <meta name="description" content="上传两个 Excel / CSV 表格，按共同字段做全连接、内连接、左连接或右连接，可指定工作表与表头行，合并结果导出 xlsx，本地处理不上传。" />
+  <meta name="keywords" content="表格合并,Excel合并,表格关联,VLOOKUP,左连接,内连接,xlsx合并" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <link rel="canonical" href="https://isnotry.github.io/MiniTools/table-merge/" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MiniTools" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="表格合并 · Excel 在线关联与连接 | MiniTools" />
+  <meta property="og:description" content="上传两个 Excel / CSV 表格，按共同字段做全连接、内连接、左连接或右连接，可指定工作表与表头行，合并结果导出 xlsx，本地处理不上传。" />
+  <meta property="og:url" content="https://isnotry.github.io/MiniTools/table-merge/" />
+  <meta property="og:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="表格合并 · Excel 在线关联与连接 | MiniTools" />
+  <meta name="twitter:description" content="上传两个 Excel / CSV 表格，按共同字段做全连接、内连接、左连接或右连接，可指定工作表与表头行，合并结果导出 xlsx，本地处理不上传。" />
+  <meta name="twitter:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "WebApplication", "name": "表格合并 · Excel 在线关联与连接 | MiniTools", "url": "https://isnotry.github.io/MiniTools/table-merge/", "description": "上传两个 Excel / CSV 表格，按共同字段做全连接、内连接、左连接或右连接，可指定工作表与表头行，合并结果导出 xlsx，本地处理不上传。", "applicationCategory": "UtilitiesApplication", "applicationSubCategory": "表格合并", "operatingSystem": "Any (runs in a web browser)", "browserRequirements": "需要支持 Canvas 与 ES2017 的现代浏览器", "isAccessibleForFree": true, "inLanguage": "zh-CN", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"}, "isPartOf": {"@type": "WebSite", "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}}
+  </script>
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}, {"@type": "ListItem", "position": 2, "name": "表格合并", "url": "https://isnotry.github.io/MiniTools/table-merge/"}]}
+  </script>
   <script src="vendor/vue.global.prod.js"></script>
   <script src="vendor/xlsx.full.min.js"></script>
   <style>
@@ -301,6 +325,8 @@
       transition: background .2s, border-color .2s, transform .2s;
     }
     .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
+  
+    .mt-crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;line-height:1.4;color:var(--foreground-tertiary,#666);margin:0 0 8px;}.mt-crumb a{color:inherit;text-decoration:none;}.mt-crumb a:hover{text-decoration:underline;}.mt-crumb .mt-crumb-sep{opacity:.55;}
   </style>
   <script>
     (function () {
@@ -333,6 +359,11 @@
   <div id="app">
     <div class="container">
       <header class="header">
+        <nav class="mt-crumb" aria-label="面包屑导航">
+          <a href="../index.html">MiniTools</a>
+          <span class="mt-crumb-sep" aria-hidden="true">/</span>
+          <span>表格合并</span>
+        </nav>
         <h1>表格合并</h1>
         <p>上传两张表格，勾选匹配字段，按连接模式合并数据</p>
       </header>
@@ -827,6 +858,9 @@
       var KEY = 'lang';
       var REPO = 'https://github.com/isnotry/MiniTools';
       var MAP = {
+        "面包屑导航": "Breadcrumb",
+        "表格合并 · Excel 在线关联与连接 | MiniTools": "Table Merge · Join Excel Files Online | MiniTools",
+        "上传两个 Excel / CSV 表格，按共同字段做全连接、内连接、左连接或右连接，可指定工作表与表头行，合并结果导出 xlsx，本地处理不上传。": "Upload two Excel or CSV files and join them on a shared field — full, inner, left or right join. Pick the worksheet and header row, then export the merged result as xlsx. All local, nothing uploaded.",
         "在 GitHub 上给项目加星": "Star this project on GitHub",
         "表格合并": "Spreadsheet Merge",
         "上传两张表格，勾选匹配字段，按连接模式合并数据": "Upload two sheets, choose the key fields, then merge them with a join",
@@ -1007,6 +1041,11 @@ st.textContent =
         }
         if (document.__mt_title == null) document.__mt_title = document.title;
         document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+        var md = document.querySelector('meta[name="description"]');
+        if (md) {
+          if (md.__mt_orig == null) md.__mt_orig = md.getAttribute('content');
+          md.setAttribute('content', lang === 'en' ? tr(md.__mt_orig) : md.__mt_orig);
+        }
       }
 
       function mount() {

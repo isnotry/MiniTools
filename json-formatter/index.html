@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON 格式化</title>
+    <title>JSON 格式化 · 校验 / 压缩 / 排序 | MiniTools</title>
+  <meta name="description" content="在线格式化、压缩、校验与排序 JSON，缩进可选 2 / 4 空格或 Tab，语法错误直接定位到行与列，支持一键复制与下载，全部在浏览器本地处理不上传。" />
+  <meta name="keywords" content="JSON格式化,JSON校验,JSON压缩,JSON在线解析,JSON格式化工具" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <link rel="canonical" href="https://isnotry.github.io/MiniTools/json-formatter/" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MiniTools" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="JSON 格式化 · 校验 / 压缩 / 排序 | MiniTools" />
+  <meta property="og:description" content="在线格式化、压缩、校验与排序 JSON，缩进可选 2 / 4 空格或 Tab，语法错误直接定位到行与列，支持一键复制与下载，全部在浏览器本地处理不上传。" />
+  <meta property="og:url" content="https://isnotry.github.io/MiniTools/json-formatter/" />
+  <meta property="og:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="JSON 格式化 · 校验 / 压缩 / 排序 | MiniTools" />
+  <meta name="twitter:description" content="在线格式化、压缩、校验与排序 JSON，缩进可选 2 / 4 空格或 Tab，语法错误直接定位到行与列，支持一键复制与下载，全部在浏览器本地处理不上传。" />
+  <meta name="twitter:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "WebApplication", "name": "JSON 格式化 · 校验 / 压缩 / 排序 | MiniTools", "url": "https://isnotry.github.io/MiniTools/json-formatter/", "description": "在线格式化、压缩、校验与排序 JSON，缩进可选 2 / 4 空格或 Tab，语法错误直接定位到行与列，支持一键复制与下载，全部在浏览器本地处理不上传。", "applicationCategory": "UtilitiesApplication", "applicationSubCategory": "JSON 格式化", "operatingSystem": "Any (runs in a web browser)", "browserRequirements": "需要支持 Canvas 与 ES2017 的现代浏览器", "isAccessibleForFree": true, "inLanguage": "zh-CN", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"}, "isPartOf": {"@type": "WebSite", "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}}
+  </script>
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}, {"@type": "ListItem", "position": 2, "name": "JSON 格式化", "url": "https://isnotry.github.io/MiniTools/json-formatter/"}]}
+  </script>
     <style>
         :root {
             --background: #ffffff;
@@ -227,7 +251,9 @@
         }
         .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
         .theme-toggle.inline { position: static; width: 36px; height: 36px; }
-    </style>
+    
+    .mt-crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;line-height:1.4;color:var(--foreground-tertiary,#666);margin:0 0 8px;}.mt-crumb a{color:inherit;text-decoration:none;}.mt-crumb a:hover{text-decoration:underline;}.mt-crumb .mt-crumb-sep{opacity:.55;}
+  </style>
     <script>
       (function () {
         try {
@@ -257,6 +283,11 @@
         </button>
 
         <div class="header">
+            <nav class="mt-crumb" aria-label="面包屑导航">
+              <a href="../index.html">MiniTools</a>
+              <span class="mt-crumb-sep" aria-hidden="true">/</span>
+              <span>JSON 格式化</span>
+            </nav>
             <h1>JSON 格式化</h1>
             <p>格式化 / 压缩 / 校验 JSON，一键复制或下载</p>
         </div>
@@ -542,6 +573,9 @@
       var KEY = 'lang';
       var REPO = 'https://github.com/isnotry/MiniTools';
       var MAP = {
+        "面包屑导航": "Breadcrumb",
+        "JSON 格式化 · 校验 / 压缩 / 排序 | MiniTools": "JSON Formatter · Validate / Minify / Sort | MiniTools",
+        "在线格式化、压缩、校验与排序 JSON，缩进可选 2 / 4 空格或 Tab，语法错误直接定位到行与列，支持一键复制与下载，全部在浏览器本地处理不上传。": "Format, minify, validate and sort JSON online. Choose 2 or 4 spaces or tabs for indentation; syntax errors are reported with line and column. Copy or download in one click — all in your browser.",
         "在 GitHub 上给项目加星": "Star this project on GitHub",
         "JSON 格式化": "JSON Formatter",
         "格式化 / 压缩 / 校验 JSON，一键复制或下载": "Format, minify and validate JSON — copy or download in one click",
@@ -725,6 +759,11 @@ st.textContent =
         }
         if (document.__mt_title == null) document.__mt_title = document.title;
         document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+        var md = document.querySelector('meta[name="description"]');
+        if (md) {
+          if (md.__mt_orig == null) md.__mt_orig = md.getAttribute('content');
+          md.setAttribute('content', lang === 'en' ? tr(md.__mt_orig) : md.__mt_orig);
+        }
       }
 
       function mount() {

@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片批处理</title>
+    <title>图片批处理 · 格式转换 / 缩放 / 压缩 | MiniTools</title>
+  <meta name="description" content="批量转换图片格式（HEIC / HEIF / JPG / PNG / WebP）、统一缩放尺寸并压缩体积，最多 99 张，实时显示压缩前后大小与节省比例，本地处理不上传。" />
+  <meta name="keywords" content="图片批处理,图片格式转换,HEIC转JPG,图片压缩,批量压缩图片,图片缩放" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <link rel="canonical" href="https://isnotry.github.io/MiniTools/image-batch/" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MiniTools" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="图片批处理 · 格式转换 / 缩放 / 压缩 | MiniTools" />
+  <meta property="og:description" content="批量转换图片格式（HEIC / HEIF / JPG / PNG / WebP）、统一缩放尺寸并压缩体积，最多 99 张，实时显示压缩前后大小与节省比例，本地处理不上传。" />
+  <meta property="og:url" content="https://isnotry.github.io/MiniTools/image-batch/" />
+  <meta property="og:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="图片批处理 · 格式转换 / 缩放 / 压缩 | MiniTools" />
+  <meta name="twitter:description" content="批量转换图片格式（HEIC / HEIF / JPG / PNG / WebP）、统一缩放尺寸并压缩体积，最多 99 张，实时显示压缩前后大小与节省比例，本地处理不上传。" />
+  <meta name="twitter:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "WebApplication", "name": "图片批处理 · 格式转换 / 缩放 / 压缩 | MiniTools", "url": "https://isnotry.github.io/MiniTools/image-batch/", "description": "批量转换图片格式（HEIC / HEIF / JPG / PNG / WebP）、统一缩放尺寸并压缩体积，最多 99 张，实时显示压缩前后大小与节省比例，本地处理不上传。", "applicationCategory": "UtilitiesApplication", "applicationSubCategory": "图片批处理", "operatingSystem": "Any (runs in a web browser)", "browserRequirements": "需要支持 Canvas 与 ES2017 的现代浏览器", "isAccessibleForFree": true, "inLanguage": "zh-CN", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"}, "isPartOf": {"@type": "WebSite", "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}}
+  </script>
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}, {"@type": "ListItem", "position": 2, "name": "图片批处理", "url": "https://isnotry.github.io/MiniTools/image-batch/"}]}
+  </script>
     <script src="vendor/jszip.min.js"></script>
     <script src="vendor/heic2any.min.js"></script>
     <style>
@@ -226,7 +250,9 @@
             transition: background .2s, border-color .2s, transform .2s;
         }
         .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
-    </style>
+    
+    .mt-crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;line-height:1.4;color:var(--foreground-tertiary,#666);margin:0 0 8px;}.mt-crumb a{color:inherit;text-decoration:none;}.mt-crumb a:hover{text-decoration:underline;}.mt-crumb .mt-crumb-sep{opacity:.55;}
+  </style>
     <script>
       (function () {
         try {
@@ -257,6 +283,11 @@
         </button>
 
         <div class="header">
+            <nav class="mt-crumb" aria-label="面包屑导航">
+              <a href="../index.html">MiniTools</a>
+              <span class="mt-crumb-sep" aria-hidden="true">/</span>
+              <span>图片批处理</span>
+            </nav>
             <h1>图片批处理</h1>
             <p class="subtitle">批量格式转换 · 缩放 · 压缩，支持 HEIC/HEIF，最多 99 张，本地处理不上传</p>
         </div>
@@ -696,6 +727,9 @@
       var KEY = 'lang';
       var REPO = 'https://github.com/isnotry/MiniTools';
       var MAP = {
+        "面包屑导航": "Breadcrumb",
+        "图片批处理 · 格式转换 / 缩放 / 压缩 | MiniTools": "Image Batch · Convert / Resize / Compress | MiniTools",
+        "批量转换图片格式（HEIC / HEIF / JPG / PNG / WebP）、统一缩放尺寸并压缩体积，最多 99 张，实时显示压缩前后大小与节省比例，本地处理不上传。": "Convert image formats in bulk (HEIC / HEIF / JPG / PNG / WebP), resize to a uniform dimension and compress file size — up to 99 images at a time, with before and after sizes and savings shown. All local.",
         "在 GitHub 上给项目加星": "Star this project on GitHub",
         "图片批处理": "Image Batch",
         "批量格式转换 · 缩放 · 压缩，支持 HEIC/HEIF，最多 99 张，本地处理不上传": "Batch convert, resize and compress HEIC/HEIF images — up to 99 files, all processed locally.",
@@ -887,6 +921,11 @@ st.textContent =
         }
         if (document.__mt_title == null) document.__mt_title = document.title;
         document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+        var md = document.querySelector('meta[name="description"]');
+        if (md) {
+          if (md.__mt_orig == null) md.__mt_orig = md.getAttribute('content');
+          md.setAttribute('content', lang === 'en' ? tr(md.__mt_orig) : md.__mt_orig);
+        }
       }
 
       function mount() {

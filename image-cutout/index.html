@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片抠图</title>
+    <title>图片抠图 · 一键去背景，导出透明 PNG | MiniTools</title>
+  <meta name="description" content="自动识别背景色一键去除图片背景，颜色容差与边缘羽化可调，配合橡皮擦与恢复笔刷手动修整，支持导出透明 PNG 或指定背景色，本地处理不上传。" />
+  <meta name="keywords" content="图片抠图,去除背景,一键抠图,透明PNG,在线抠图,去底色" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <link rel="canonical" href="https://isnotry.github.io/MiniTools/image-cutout/" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MiniTools" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="图片抠图 · 一键去背景，导出透明 PNG | MiniTools" />
+  <meta property="og:description" content="自动识别背景色一键去除图片背景，颜色容差与边缘羽化可调，配合橡皮擦与恢复笔刷手动修整，支持导出透明 PNG 或指定背景色，本地处理不上传。" />
+  <meta property="og:url" content="https://isnotry.github.io/MiniTools/image-cutout/" />
+  <meta property="og:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="图片抠图 · 一键去背景，导出透明 PNG | MiniTools" />
+  <meta name="twitter:description" content="自动识别背景色一键去除图片背景，颜色容差与边缘羽化可调，配合橡皮擦与恢复笔刷手动修整，支持导出透明 PNG 或指定背景色，本地处理不上传。" />
+  <meta name="twitter:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "WebApplication", "name": "图片抠图 · 一键去背景，导出透明 PNG | MiniTools", "url": "https://isnotry.github.io/MiniTools/image-cutout/", "description": "自动识别背景色一键去除图片背景，颜色容差与边缘羽化可调，配合橡皮擦与恢复笔刷手动修整，支持导出透明 PNG 或指定背景色，本地处理不上传。", "applicationCategory": "UtilitiesApplication", "applicationSubCategory": "图片抠图", "operatingSystem": "Any (runs in a web browser)", "browserRequirements": "需要支持 Canvas 与 ES2017 的现代浏览器", "isAccessibleForFree": true, "inLanguage": "zh-CN", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"}, "isPartOf": {"@type": "WebSite", "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}}
+  </script>
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}, {"@type": "ListItem", "position": 2, "name": "图片抠图", "url": "https://isnotry.github.io/MiniTools/image-cutout/"}]}
+  </script>
     <style>
         :root {
             --background: #ffffff;
@@ -310,7 +334,9 @@
             transition: background .2s, border-color .2s, transform .2s;
         }
         .theme-toggle:hover { border-color: var(--gray-300); transform: scale(1.05); }
-    </style>
+    
+    .mt-crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;line-height:1.4;color:var(--foreground-tertiary,#666);margin:0 0 8px;}.mt-crumb a{color:inherit;text-decoration:none;}.mt-crumb a:hover{text-decoration:underline;}.mt-crumb .mt-crumb-sep{opacity:.55;}
+  </style>
     <script>
       (function () {
         try {
@@ -341,6 +367,11 @@
         </button>
 
         <div class="header">
+            <nav class="mt-crumb" aria-label="面包屑导航">
+              <a href="../index.html">MiniTools</a>
+              <span class="mt-crumb-sep" aria-hidden="true">/</span>
+              <span>图片抠图</span>
+            </nav>
             <h1>图片抠图</h1>
             <p class="subtitle">自动识别背景色一键去背，容差与羽化可调，橡皮擦手动修整，导出透明 PNG，本地处理不上传</p>
         </div>
@@ -1294,6 +1325,9 @@
       var KEY = 'lang';
       var REPO = 'https://github.com/isnotry/MiniTools';
       var MAP = {
+        "面包屑导航": "Breadcrumb",
+        "图片抠图 · 一键去背景，导出透明 PNG | MiniTools": "Image Cutout · Remove Background, Export Transparent PNG | MiniTools",
+        "自动识别背景色一键去除图片背景，颜色容差与边缘羽化可调，配合橡皮擦与恢复笔刷手动修整，支持导出透明 PNG 或指定背景色，本地处理不上传。": "Remove image backgrounds with one click: the background colour is detected automatically, with adjustable tolerance and edge feathering, plus eraser and restore brushes for manual touch-ups. Export a transparent PNG or a solid background.",
         "在 GitHub 上给项目加星": "Star this project on GitHub",
         "图片抠图": "Background Remover",
         "自动识别背景色一键去背，容差与羽化可调，橡皮擦手动修整，导出透明 PNG，本地处理不上传": "Detect the background color and remove it in one click, with tolerance and feather controls, an eraser for touch-ups and transparent PNG export — all local.",
@@ -1498,6 +1532,11 @@ st.textContent =
         }
         if (document.__mt_title == null) document.__mt_title = document.title;
         document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+        var md = document.querySelector('meta[name="description"]');
+        if (md) {
+          if (md.__mt_orig == null) md.__mt_orig = md.getAttribute('content');
+          md.setAttribute('content', lang === 'en' ? tr(md.__mt_orig) : md.__mt_orig);
+        }
       }
 
       function mount() {

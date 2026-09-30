@@ -164,6 +164,9 @@ MiniTools/
 │   ├── design.md               # 统一设计规范（Next.js / Geist 风格）
 │   ├── screenshot.png          # 中文界面封面
 │   └── screenshot-en.png       # 英文界面封面
+├── favicon.svg                 # 站点图标
+├── robots.txt                  # 搜索引擎抓取规则
+├── sitemap.xml                 # 站点地图
 ├── image-splitter/             # 图片裁切：网格 / 智能切图 / 智能裁剪 / 选框裁切
 ├── image-batch/                # 图片批处理：格式转换 / 缩放 / 压缩
 ├── image-watermark/            # 图片加水印
@@ -197,6 +200,7 @@ MiniTools/
 - **依赖必须本地化** —— 新库放进 `<工具>/vendor/`，用相对路径引入，**不要引 CDN**，否则会破坏离线可用性
 - **颜色与圆角** —— 一律引用 CSS 变量，组件内不硬编码色值；暗色走 `:root.dark`
 - **防闪烁** —— 读取 `theme` 的内联脚本放在 `<head>` 里同步执行，晚一步就会闪一下白屏
+- **SEO** —— 每页都有独立的 `<title>`、`<meta name="description">`、`<link rel="canonical">`、Open Graph / Twitter Card、结构化数据（JSON-LD）与面包屑导航；`robots.txt` 和 `sitemap.xml` 已提交根目录
 - **本地验收** —— 在仓库根目录起静态服务后逐个打开工具看控制台（不要直接双击时用 `file://` 调试 `vendor/` 的加载）：
 
 ```bash

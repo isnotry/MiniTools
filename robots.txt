@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://isnotry.github.io/MiniTools/sitemap.xml

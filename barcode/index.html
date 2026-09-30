@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>条码生成器</title>
+    <title>条码生成器 · 批量生成 CODE128 / EAN13 | MiniTools</title>
+  <meta name="description" content="在浏览器里批量生成 CODE128、EAN13、UPC、CODE39 等格式条码，可自定义条宽、高度、字号与边距，支持逐条下载 PNG 或打包成 ZIP，数据本地处理不上传。" />
+  <meta name="keywords" content="条码生成,条形码,CODE128,EAN13,批量条码,在线条码生成器,条码下载" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <link rel="canonical" href="https://isnotry.github.io/MiniTools/barcode/" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MiniTools" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="条码生成器 · 批量生成 CODE128 / EAN13 | MiniTools" />
+  <meta property="og:description" content="在浏览器里批量生成 CODE128、EAN13、UPC、CODE39 等格式条码，可自定义条宽、高度、字号与边距，支持逐条下载 PNG 或打包成 ZIP，数据本地处理不上传。" />
+  <meta property="og:url" content="https://isnotry.github.io/MiniTools/barcode/" />
+  <meta property="og:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="条码生成器 · 批量生成 CODE128 / EAN13 | MiniTools" />
+  <meta name="twitter:description" content="在浏览器里批量生成 CODE128、EAN13、UPC、CODE39 等格式条码，可自定义条宽、高度、字号与边距，支持逐条下载 PNG 或打包成 ZIP，数据本地处理不上传。" />
+  <meta name="twitter:image" content="https://isnotry.github.io/MiniTools/docs/screenshot.png" />
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "WebApplication", "name": "条码生成器 · 批量生成 CODE128 / EAN13 | MiniTools", "url": "https://isnotry.github.io/MiniTools/barcode/", "description": "在浏览器里批量生成 CODE128、EAN13、UPC、CODE39 等格式条码，可自定义条宽、高度、字号与边距，支持逐条下载 PNG 或打包成 ZIP，数据本地处理不上传。", "applicationCategory": "UtilitiesApplication", "applicationSubCategory": "条码生成器", "operatingSystem": "Any (runs in a web browser)", "browserRequirements": "需要支持 Canvas 与 ES2017 的现代浏览器", "isAccessibleForFree": true, "inLanguage": "zh-CN", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"}, "isPartOf": {"@type": "WebSite", "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}}
+  </script>
+  <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "MiniTools", "url": "https://isnotry.github.io/MiniTools/"}, {"@type": "ListItem", "position": 2, "name": "条码生成器", "url": "https://isnotry.github.io/MiniTools/barcode/"}]}
+  </script>
     <script src="vendor/JsBarcode.all.min.js"></script>
     <script src="vendor/jszip.min.js"></script>
     <style>
@@ -413,7 +437,9 @@
             color: var(--foreground-secondary);
             font-size: 14px;
         }
-    </style>
+    
+    .mt-crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;line-height:1.4;color:var(--foreground-tertiary,#666);margin:0 0 8px;}.mt-crumb a{color:inherit;text-decoration:none;}.mt-crumb a:hover{text-decoration:underline;}.mt-crumb .mt-crumb-sep{opacity:.55;}
+  </style>
     <script>
       (function () {
         try {
@@ -444,6 +470,11 @@
         </button>
 
         <div class="header">
+            <nav class="mt-crumb" aria-label="面包屑导航">
+              <a href="../index.html">MiniTools</a>
+              <span class="mt-crumb-sep" aria-hidden="true">/</span>
+              <span>条码生成器</span>
+            </nav>
             <h1>条码生成器</h1>
             <p>快速生成条码图片，一键保存全部</p>
         </div>
@@ -936,6 +967,9 @@ ABC123456789"></textarea>
         var KEY = 'lang';
         var REPO = 'https://github.com/isnotry/MiniTools';
         var MAP = {
+          "面包屑导航": "Breadcrumb",
+          "条码生成器 · 批量生成 CODE128 / EAN13 | MiniTools": "Barcode Generator · Bulk CODE128 / EAN13 | MiniTools",
+          "在浏览器里批量生成 CODE128、EAN13、UPC、CODE39 等格式条码，可自定义条宽、高度、字号与边距，支持逐条下载 PNG 或打包成 ZIP，数据本地处理不上传。": "Generate CODE128, EAN13, UPC and CODE39 barcodes in bulk, with adjustable bar width, height, font size and margins. Download each barcode as PNG or all of them as a ZIP — everything stays on your machine.",
           "在 GitHub 上给项目加星": "Star this project on GitHub",
           "条码生成器": "Barcode Generator",
           "快速生成条码图片，一键保存全部": "Generate barcode images quickly, then save them all at once",
@@ -1121,6 +1155,11 @@ st.textContent =
           }
           if (document.__mt_title == null) document.__mt_title = document.title;
           document.title = lang === 'en' ? tr(document.__mt_title) : document.__mt_title;
+          var md = document.querySelector('meta[name="description"]');
+          if (md) {
+            if (md.__mt_orig == null) md.__mt_orig = md.getAttribute('content');
+            md.setAttribute('content', lang === 'en' ? tr(md.__mt_orig) : md.__mt_orig);
+          }
         }
 
         function mount() {

@@ -166,6 +166,9 @@ MiniTools/
 │   ├── design.md               # shared design spec (Next.js / Geist style)
 │   ├── screenshot.png          # Chinese UI cover
 │   └── screenshot-en.png       # English UI cover
+├── favicon.svg                 # site icon
+├── robots.txt                  # crawler rules
+├── sitemap.xml                 # sitemap
 ├── image-splitter/             # grid / smart slice / smart crop / free selection
 ├── image-batch/                # convert / resize / compress
 ├── image-watermark/            # tiled or positioned watermark
@@ -177,6 +180,7 @@ MiniTools/
 ├── html-to-pdf/                # render to PDF
 ├── table-merge/                # spreadsheet joins
 ├── barcode/                    # bulk barcode generator
+├── <tool>/README.md            # docs for that tool (features / usage / dependencies)
 └── <tool>/vendor/              # third-party libs for that tool (kept offline)
 ```
 
@@ -198,6 +202,7 @@ Every tool follows [`docs/design.md`](./docs/design.md); the essentials:
 - **Vendoring is mandatory** —— put new libraries in `<tool>/vendor/` and load them by relative path; **never point at a CDN**, or you break offline usage
 - **Colour and radius** —— always through CSS variables, never hardcoded; dark mode lives in `:root.dark`
 - **No flash** —— the inline script that reads `theme` must run synchronously in `<head>`; anything later shows a white flash
+- **SEO** —— every page has its own `<title>`, `<meta name="description">`, `<link rel="canonical">`, Open Graph / Twitter Card, structured data (JSON-LD) and breadcrumb navigation; `robots.txt` and `sitemap.xml` are in the repository root
 - **Local check** —— serve the repository root and open each tool with the console open (avoid debugging `vendor/` loading over `file://`):
 
 ```bash
